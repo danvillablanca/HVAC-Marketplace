@@ -1,0 +1,20 @@
+{
+  "name": "Marketplace HVAC",
+  "short_name": "HVAC Market",
+  "description": "Encuentra y contrata proveedores HVAC verificados en Chile con mapa, resenas y respaldo ASHRAE.",
+  "lang": "es-CL",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#0EA5C9",
+  "background_color": "#F5F9FB",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
