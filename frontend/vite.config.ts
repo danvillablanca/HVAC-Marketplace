@@ -5,6 +5,8 @@ import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // .env vive en la raiz del monorepo; Vite solo expone las VITE_*.
+  envDir: fileURLToPath(new URL("..", import.meta.url)),
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
