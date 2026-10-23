@@ -4,6 +4,11 @@ export const env = {
   supabaseUrl: import.meta.env.VITE_SUPABASE_URL ?? "",
   supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY ?? "",
   mapTilerKey: import.meta.env.VITE_MAPTILER_KEY ?? "",
+  /**
+   * Modo demo (VITE_DEMO_MODE=true): el frontend no llama al backend y usa solo los
+   * datos demo locales. Pensado para publicar una vitrina estatica (p. ej. Render).
+   */
+  demoMode: import.meta.env.VITE_DEMO_MODE === "true",
 };
 
 export const hasSupabaseConfig = Boolean(env.supabaseUrl && env.supabaseAnonKey);
