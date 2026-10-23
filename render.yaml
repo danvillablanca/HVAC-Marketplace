@@ -1,0 +1,21 @@
+# Render Blueprint: publica el frontend como sitio estatico gratuito en modo demo.
+# - Sin backend ni Supabase: usa los datos demo del frontend (VITE_DEMO_MODE=true).
+# - Los sitios estaticos de Render son gratis y no se duermen.
+services:
+  - type: web
+    runtime: static
+    # Nombre del servicio = subdominio: https://gptig1-hvac-connect.onrender.com
+    name: gptig1-hvac-connect
+    # Instala el monorepo con pnpm (version fijada en package.json) y compila solo el frontend.
+    buildCommand: npx --yes pnpm@12.4.2 install --frozen-lockfile && npx --yes pnpm@12.4.2 --filter @hvac/frontend build
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_DEMO_MODE
+        value: "true"
+    # SPA: cualquier ruta (/mapa, /buscar, /proveedor/...) sirve index.html.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
