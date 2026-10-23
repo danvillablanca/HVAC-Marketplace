@@ -29,6 +29,12 @@ interface RequestOptions {
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = "GET", body, signal, token } = options;
 
+  // Modo demo: sin backend. Falla al instante para que cada hook use su fallback demo
+  // (evita esperas y el aviso del navegador por acceder a localhost desde un sitio publico).
+  if (env.demoMode) {
+    throw new ApiRequestError("Modo demo: backend no disponible", "demo_mode", 0);
+  }
+
   const headers: Record<string, string> = { Accept: "application/json" };
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (token) headers.Authorization = `Bearer ${token}`;
