@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   LeadCreateInput,
   NearbySearchInput,
@@ -8,6 +8,7 @@ import type {
   ReviewCreateInput,
 } from "@hvac/shared";
 import { apiFetch } from "@/lib/api";
+import { env } from "@/lib/env";
 import { distanceMeters } from "@/lib/geo";
 import { DEMO_PROVIDERS, DEMO_REVIEWS, findDemoProvider } from "@/data/providers";
 
@@ -92,18 +93,45 @@ export function useProviderReviews(providerId: string | undefined) {
   });
 }
 
-/** Crear una solicitud (lead) de servicio. */
+/** Id local para registros simulados en modo demo. */
+function demoId(prefix: string): string {
+  return `${prefix}-demo-${Date.now().toString(36)}`;
+}
+
+/** Crear una solicitud (lead) de servicio. En modo demo se simula el envio. */
 export function useCreateLead() {
   return useMutation({
-    mutationFn: (input: LeadCreateInput) =>
-      apiFetch<{ id: string }>("/api/leads", { method: "POST", body: input }),
+    mutationFn: async (input: LeadCreateInput) => {
+      if (env.demoMode) return { id: demoId("lead") };
+      return apiFetch<{ id: string }>("/api/leads", { method: "POST", body: input });
+    },
   });
 }
 
-/** Crear una resena. */
+/** Crear una resena. En modo demo se guarda en memoria y aparece en la lista. */
 export function useCreateReview() {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: ReviewCreateInput) =>
-      apiFetch<Review>("/api/reviews", { method: "POST", body: input }),
+    mutationFn: async (input: ReviewCreateInput): Promise<Review> => {
+      if (env.demoMode) {
+        const review: Review = {
+          id: demoId("review"),
+          providerId: input.providerId,
+          rating: input.rating,
+          comment: input.comment ?? null,
+          authorName: "Usuario demo",
+          createdAt: new Date().toISOString(),
+          verified: false,
+        };
+        // La resena nueva queda primera en la lista del proveedor (solo en esta pestana).
+        DEMO_REVIEWS[input.providerId] = [review, ...(DEMO_REVIEWS[input.providerId] ?? [])];
+        return review;
+      }
+      return apiFetch<Review>("/api/reviews", { method: "POST", body: input });
+    },
+    onSuccess: (review) => {
+      // Refresca la lista de resenas del proveedor.
+      void queryClient.invalidateQueries({ queryKey: ["reviews", review.providerId] });
+    },
   });
 }
