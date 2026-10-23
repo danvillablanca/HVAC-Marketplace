@@ -1,0 +1,14 @@
+packages:
+  - "frontend"
+  - "backend"
+  - "shared"
+allowBuilds:
+  "@google/genai": true
+  protobufjs: true
+minimumReleaseAgeExclude:
+  - framer-motion@13.4.3
+  - lucide-react@1.48.0
+  - maplibre-gl@6.11.2
+  - motion-dom@13.4.2
+  - motion@13.4.3
+  - vite@8.3.1
