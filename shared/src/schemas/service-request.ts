@@ -1,0 +1,43 @@
+import { z } from "zod";
+
+export const serviceRequestCreateSchema = z.object({
+  serviceId: z.string().uuid().optional(),
+  equipment: z.enum(["split", "ducto", "chiller", "vrf", "camara_frio", "otro"]).default("otro"),
+  description: z.string().trim().min(20).max(1000),
+  urgency: z.enum(["baja", "media", "alta", "urgente"]).default("media"),
+  commune: z.string().trim().max(100).optional(),
+  region: z.string().trim().max(100).optional(),
+  address: z.string().trim().max(300).optional(),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
+  photos: z.array(z.string().url()).max(5).default([]),
+});
+export type ServiceRequestCreateInput = z.infer<typeof serviceRequestCreateSchema>;
+
+export const serviceRequestUpdateSchema = z.object({
+  status: z.enum([
+    "abierta",
+    "con_cotizaciones",
+    "aceptada",
+    "en_ejecucion",
+    "completada",
+    "cancelada",
+  ]),
+  note: z.string().trim().max(500).optional(),
+});
+export type ServiceRequestUpdateInput = z.infer<typeof serviceRequestUpdateSchema>;
+
+export const quoteCreateSchema = z.object({
+  requestId: z.string().uuid(),
+  amount: z.number().int().positive(),
+  includesIva: z.boolean().default(true),
+  scope: z.string().trim().min(20).max(2000),
+  deadlineDays: z.number().int().positive(),
+  validDays: z.number().int().min(1).max(30).default(15),
+});
+export type QuoteCreateInput = z.infer<typeof quoteCreateSchema>;
+
+export const quoteAcceptSchema = z.object({
+  quoteId: z.string().uuid(),
+});
+export type QuoteAcceptInput = z.infer<typeof quoteAcceptSchema>;

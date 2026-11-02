@@ -90,6 +90,98 @@ export interface Appointment {
   status: AppointmentStatus;
 }
 
+// ---- Solicitudes de servicio ----
+
+export const REQUEST_STATUS = [
+  "abierta",
+  "con_cotizaciones",
+  "aceptada",
+  "en_ejecucion",
+  "completada",
+  "cancelada",
+] as const;
+export type RequestStatus = (typeof REQUEST_STATUS)[number];
+
+export const QUOTE_STATUS = ["enviada", "aceptada", "rechazada", "vencida"] as const;
+export type QuoteStatus = (typeof QUOTE_STATUS)[number];
+
+export const EQUIPMENT_TYPES = ["split", "ducto", "chiller", "vrf", "camara_frio", "otro"] as const;
+export type EquipmentType = (typeof EQUIPMENT_TYPES)[number];
+
+export const URGENCY_LEVELS = ["baja", "media", "alta", "urgente"] as const;
+export type UrgencyLevel = (typeof URGENCY_LEVELS)[number];
+
+export interface ServiceRequest {
+  id: string;
+  clientId: string;
+  serviceId: string | null;
+  serviceName: string | null;
+  equipment: EquipmentType;
+  description: string;
+  urgency: UrgencyLevel;
+  status: RequestStatus;
+  commune: string | null;
+  region: string | null;
+  address: string | null;
+  photos: string[];
+  quotesCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Quote {
+  id: string;
+  requestId: string;
+  providerId: string;
+  providerName: string | null;
+  amount: number;
+  includesIva: boolean;
+  scope: string;
+  deadlineDays: number;
+  validDays: number;
+  status: QuoteStatus;
+  createdAt: string;
+}
+
+export interface ServiceRequestDetail extends ServiceRequest {
+  quotes: Quote[];
+  events: RequestEvent[];
+}
+
+export interface RequestEvent {
+  id: string;
+  requestId: string;
+  actorId: string | null;
+  fromStatus: RequestStatus | null;
+  toStatus: RequestStatus;
+  note: string | null;
+  createdAt: string;
+}
+
+// ---- Notificaciones ----
+
+export const NOTIFICATION_TYPES = [
+  "nueva_cotizacion",
+  "cotizacion_aceptada",
+  "solicitud_actualizada",
+  "verificacion_aprobada",
+  "verificacion_rechazada",
+  "sistema",
+] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  body: string | null;
+  refType: string | null;
+  refId: string | null;
+  read: boolean;
+  createdAt: string;
+}
+
 /** Respuesta estandar de la API. */
 export interface ApiSuccess<T> {
   ok: true;
