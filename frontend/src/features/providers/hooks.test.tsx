@@ -68,6 +68,8 @@ const santiagoInput: NearbySearchInput = {
   radiusKm: 20,
   limit: 20,
   offset: 0,
+  sort: "distance",
+  onlyAvailable: false,
 };
 
 beforeEach(() => {
@@ -82,13 +84,14 @@ afterEach(() => {
 describe("useNearbyProviders", () => {
   it("devuelve los datos de la API y construye los parametros de busqueda", async () => {
     const apiProviders = [makeSummary({ id: "api-1" }), makeSummary({ id: "api-2" })];
-    const fetchMock = useStubbedFetch(async () => okResponse(apiProviders));
+    const page = { items: apiProviders, total: 2, limit: 20, offset: 0 };
+    const fetchMock = useStubbedFetch(async () => okResponse(page));
 
     const input: NearbySearchInput = { ...santiagoInput, segment: "industrial", query: "split" };
     const { result } = renderHookWithClient(() => useNearbyProviders(input));
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual(apiProviders);
+    expect(result.current.data).toEqual(page);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const url = String(fetchMock.mock.calls[0]?.[0]);
@@ -97,6 +100,38 @@ describe("useNearbyProviders", () => {
     expect(url).toContain("radiusKm=20");
     expect(url).toContain("segment=industrial");
     expect(url).toContain("query=split");
+    expect(url).toContain("offset=0");
+    expect(url).toContain("sort=distance");
+  });
+
+  it("PR-018 envia servicio, calificacion minima, disponibilidad y pagina", async () => {
+    const fetchMock = useStubbedFetch(async () =>
+      okResponse({ items: [], total: 0, limit: 10, offset: 10 }),
+    );
+    const { result } = renderHookWithClient(() =>
+      useNearbyProviders({
+        lat: -33.44,
+        lng: -70.65,
+        serviceId: "50000000-0000-0000-0000-000000000002",
+        minRating: 4,
+        onlyAvailable: true,
+        sort: "rating",
+        offset: 10,
+      }),
+    );
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    const url = String(fetchMock.mock.calls[0]?.[0]);
+    for (const part of [
+      "serviceId=50000000-0000-0000-0000-000000000002",
+      "minRating=4",
+      "onlyAvailable=true",
+      "sort=rating",
+      "offset=10",
+      "radiusKm=10",
+      "limit=10",
+    ]) {
+      expect(url).toContain(part);
+    }
   });
 
   it("usa el fallback demo filtrando por radio", async () => {
@@ -109,7 +144,7 @@ describe("useNearbyProviders", () => {
     );
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    const data = result.current.data ?? [];
+    const data = result.current.data?.items ?? [];
     expect(data.length).toBeGreaterThan(0);
     for (const provider of data) {
       expect(provider.distanceMeters).not.toBeNull();
@@ -130,7 +165,7 @@ describe("useNearbyProviders", () => {
     );
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    const data = result.current.data ?? [];
+    const data = result.current.data?.items ?? [];
     expect(data.length).toBeGreaterThan(0);
     for (const provider of data) expect(provider.segment).toBe("industrial");
   });
@@ -145,7 +180,7 @@ describe("useNearbyProviders", () => {
     );
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    const data = result.current.data ?? [];
+    const data = result.current.data?.items ?? [];
     expect(data).toHaveLength(1);
     expect(data[0]?.legalName).toContain("Hogar Fresco");
 
@@ -153,7 +188,8 @@ describe("useNearbyProviders", () => {
       useNearbyProviders({ ...santiagoInput, limit: 2 }),
     );
     await waitFor(() => expect(limited.current.isSuccess).toBe(true));
-    expect(limited.current.data).toHaveLength(2);
+    expect(limited.current.data?.items).toHaveLength(2);
+    expect(limited.current.data?.total).toBeGreaterThan(2);
   });
 
   it("no consulta cuando el input es null", () => {

@@ -13,7 +13,7 @@ import {
   type SymbolLayerSpecification,
 } from "maplibre-gl";
 import type { GeoPoint, ProviderSummary } from "@hvac/shared";
-import { mapStyleUrl } from "@/lib/env";
+import { MAP_FONT, mapStyle } from "@/lib/env";
 import { cn } from "@/lib/utils";
 import {
   buildCircle,
@@ -275,7 +275,7 @@ export function MapView({
 
     const map = new MapLibreMap({
       container,
-      style: mapStyleUrl(),
+      style: mapStyle(),
       center: [stateRef.current.center.lng, stateRef.current.center.lat],
       zoom: 11,
       attributionControl: { compact: true },
@@ -333,7 +333,11 @@ export function MapView({
         type: "symbol",
         source: PROVIDERS_SOURCE,
         filter: HAS_COUNT,
-        layout: { "text-field": ["get", "point_count_abbreviated"], "text-size": 12 },
+        layout: {
+          "text-field": ["get", "point_count_abbreviated"],
+          "text-size": 12,
+          "text-font": MAP_FONT,
+        },
         paint: { "text-color": "#ffffff" },
       };
       map.addLayer(clusterLayer);

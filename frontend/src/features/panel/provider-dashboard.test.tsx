@@ -75,4 +75,33 @@ describe("ProviderDashboard", () => {
     renderWithProviders(<ProviderDashboard />);
     expect(screen.getByText("Motivo: Patente vencida")).toBeInTheDocument();
   });
+
+  it("explica por que no aparece en la busqueda y enlaza a verificarse", () => {
+    hooks.profile = {
+      verificationStatus: "pendiente",
+      verificationNote: null,
+      isAvailable: true,
+      coverageRadiusKm: 20,
+      commune: "Lo Barnechea",
+    };
+    renderWithProviders(<ProviderDashboard />);
+    expect(screen.getByText("¿Por qué no apareces en la búsqueda?")).toBeInTheDocument();
+    expect(screen.getByText(/20 km desde Lo Barnechea/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Enviar a verificación" })).toHaveAttribute(
+      "href",
+      "/panel/proveedor/verificacion",
+    );
+  });
+
+  it("confirma la visibilidad cuando esta verificado y disponible", () => {
+    hooks.profile = {
+      verificationStatus: "verificado",
+      verificationNote: null,
+      isAvailable: true,
+      coverageRadiusKm: 30,
+      commune: "La Florida",
+    };
+    renderWithProviders(<ProviderDashboard />);
+    expect(screen.getByText("Tu empresa aparece en la búsqueda")).toBeInTheDocument();
+  });
 });

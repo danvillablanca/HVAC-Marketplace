@@ -1,3 +1,5 @@
+import type { StyleSpecification } from "maplibre-gl";
+
 /** Los valores de ejemplo de .env.example ("your-...") cuentan como no configurados. */
 const real = (value: string | undefined) => (value && !value.startsWith("your-") ? value : "");
 
@@ -15,14 +17,32 @@ export const env = {
 export const hasSupabaseConfig = Boolean(env.supabaseUrl && env.supabaseAnonKey);
 export const isDemoMode = env.demoMode;
 
+/** Fuentes para las etiquetas del mapa (contador de clusters). */
+export const MAP_GLYPHS = "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf";
+export const MAP_FONT = ["Open Sans Regular"];
+
 /**
- * Estilo de mapa para MapLibre.
+ * Estilo de mapa para MapLibre (REQ-BUS-04).
  * - Con `VITE_MAPTILER_KEY` usa MapTiler (streets-v2).
- * - Sin key usa OpenFreeMap (tiles vectoriales reales, gratis y sin API key).
+ * - Sin key usa teselas raster de OpenStreetMap, con su atribucion.
  */
-export function mapStyleUrl(): string {
+export function mapStyle(): string | StyleSpecification {
   if (env.mapTilerKey) {
     return `https://api.maptiler.com/maps/streets-v2/style.json?key=${env.mapTilerKey}`;
   }
-  return "https://tiles.openfreemap.org/styles/positron";
+  return {
+    version: 8,
+    glyphs: MAP_GLYPHS,
+    sources: {
+      osm: {
+        type: "raster",
+        tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+        tileSize: 256,
+        maxzoom: 19,
+        attribution:
+          '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      },
+    },
+    layers: [{ id: "osm", type: "raster", source: "osm" }],
+  };
 }

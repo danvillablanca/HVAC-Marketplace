@@ -100,7 +100,8 @@ beforeEach(() => {
     "fetch",
     vi.fn(async (input: unknown) => {
       const url = String(input);
-      if (url.includes("/api/providers/search")) return jsonResponse([provider]);
+      if (url.includes("/api/providers/search"))
+        return jsonResponse({ items: [provider], total: 1, limit: 50, offset: 0 });
       return jsonResponse([]);
     }),
   );

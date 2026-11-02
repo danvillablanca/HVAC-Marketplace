@@ -5,7 +5,7 @@ import { ChevronUp, List, LocateFixed, Map as MapIcon, MapPin } from "lucide-rea
 import {
   SERVICE_SEGMENTS,
   type GeoPoint,
-  type NearbySearchInput,
+  type NearbySearchParams,
   type ServiceSegment,
 } from "@hvac/shared";
 import { MapView, RadiusFilter, useGeolocation } from "@/features/map";
@@ -39,7 +39,7 @@ export default function MapPage() {
   const [searchParams] = useSearchParams();
   const geo = useGeolocation();
 
-  const [radiusKm, setRadiusKm] = useState(15);
+  const [radiusKm, setRadiusKm] = useState(10);
   const [segment, setSegment] = useState<ServiceSegment | "all">(() =>
     normalizeSegment(searchParams.get("segment")),
   );
@@ -53,7 +53,7 @@ export default function MapPage() {
 
   const center = centerOverride ?? geo.coords;
 
-  const searchInput = useMemo<NearbySearchInput>(
+  const searchInput = useMemo<NearbySearchParams>(
     () => ({
       lat: center.lat,
       lng: center.lng,
@@ -67,7 +67,7 @@ export default function MapPage() {
   );
 
   const nearby = useNearbyProviders(searchInput);
-  const providers = nearby.data ?? [];
+  const providers = nearby.data?.items ?? [];
 
   const handleSelect = (id: string) => {
     setSelectedId(id);

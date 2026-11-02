@@ -1,7 +1,10 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { nearbySearchSchema } from "@hvac/shared";
 import type {
   LeadCreateInput,
   NearbySearchInput,
+  NearbySearchParams,
+  ProviderSearchResult,
   ProviderDetail,
   ProviderSummary,
   Review,
@@ -19,40 +22,58 @@ function toSummary(
   return { ...provider, distanceMeters: distance };
 }
 
-function filterDemo(input: NearbySearchInput): ProviderSummary[] {
+/** Fallback sin backend: mismos filtros que la API sobre los datos demo del frontend. */
+function filterDemo(input: NearbySearchInput): ProviderSearchResult {
   const origin = { lat: input.lat, lng: input.lng };
-  return DEMO_PROVIDERS.map((p) => toSummary(p, origin))
+  const needle = input.query?.toLowerCase();
+  const all = DEMO_PROVIDERS.filter((p) => p.verificationStatus === "verificado")
+    .map((p) => toSummary(p, origin))
     .filter((p) => {
-      const radius = input.radiusKm * 1000;
-      const withinRadius = p.distanceMeters !== null && p.distanceMeters <= radius;
+      const withinRadius = p.distanceMeters !== null && p.distanceMeters <= input.radiusKm * 1000;
       const segmentOk = !input.segment || p.segment === input.segment;
+      const ratingOk = input.minRating == null || (p.ratingAvg ?? 0) >= input.minRating;
       const queryOk =
-        !input.query ||
-        p.legalName.toLowerCase().includes(input.query.toLowerCase()) ||
-        p.services.some((s) => s.toLowerCase().includes(input.query!.toLowerCase()));
-      return withinRadius && segmentOk && queryOk;
+        !needle ||
+        p.legalName.toLowerCase().includes(needle) ||
+        p.services.some((s) => s.toLowerCase().includes(needle));
+      return withinRadius && segmentOk && ratingOk && queryOk;
     })
-    .sort((a, b) => (a.distanceMeters ?? 0) - (b.distanceMeters ?? 0))
-    .slice(0, input.limit);
+    .sort((a, b) =>
+      input.sort === "rating"
+        ? (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0)
+        : (a.distanceMeters ?? 0) - (b.distanceMeters ?? 0),
+    );
+  return {
+    items: all.slice(input.offset, input.offset + input.limit),
+    total: all.length,
+    limit: input.limit,
+    offset: input.offset,
+  };
 }
 
-/** Proveedores cercanos con fallback a datos demo si el backend no responde. */
-export function useNearbyProviders(input: NearbySearchInput | null) {
+/** BUS-03: pagina de proveedores cercanos, con fallback demo si el backend no responde. */
+export function useNearbyProviders(params: NearbySearchParams | null) {
   return useQuery({
-    queryKey: ["providers", "nearby", input],
-    enabled: Boolean(input),
-    queryFn: async (): Promise<ProviderSummary[]> => {
-      if (!input) return [];
-      const params = new URLSearchParams({
+    queryKey: ["providers", "nearby", params],
+    enabled: Boolean(params),
+    placeholderData: (previous) => previous,
+    queryFn: async (): Promise<ProviderSearchResult> => {
+      const input = nearbySearchSchema.parse(params);
+      const query = new URLSearchParams({
         lat: String(input.lat),
         lng: String(input.lng),
         radiusKm: String(input.radiusKm),
         limit: String(input.limit),
+        offset: String(input.offset),
+        sort: input.sort,
+        onlyAvailable: String(input.onlyAvailable),
       });
-      if (input.segment) params.set("segment", input.segment);
-      if (input.query) params.set("query", input.query);
+      if (input.segment) query.set("segment", input.segment);
+      if (input.serviceId) query.set("serviceId", input.serviceId);
+      if (input.query) query.set("query", input.query);
+      if (input.minRating != null) query.set("minRating", String(input.minRating));
       try {
-        return await apiFetch<ProviderSummary[]>(`/api/providers/search?${params.toString()}`);
+        return await apiFetch<ProviderSearchResult>(`/api/providers/search?${query.toString()}`);
       } catch {
         return filterDemo(input);
       }

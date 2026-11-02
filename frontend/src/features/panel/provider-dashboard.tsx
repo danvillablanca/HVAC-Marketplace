@@ -3,7 +3,10 @@ import { motion } from "motion/react";
 import {
   AlertCircle,
   BadgeCheck,
+  CheckCircle2,
+  Circle,
   Clock,
+  Eye,
   FileText,
   Inbox,
   Pencil,
@@ -11,7 +14,7 @@ import {
   Star,
   XCircle,
 } from "lucide-react";
-import type { ProviderVerificationStatus } from "@hvac/shared";
+import type { ProviderProfile, ProviderVerificationStatus } from "@hvac/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -129,6 +132,8 @@ export function ProviderDashboard() {
           </CardContent>
         </Card>
       )}
+
+      {!profileLoading && profile !== undefined && <SearchVisibility profile={profile} />}
 
       <div className="grid gap-4 sm:grid-cols-3">
         {metrics.map((metric, index) => (
@@ -254,5 +259,74 @@ export function ProviderDashboard() {
         </Card>
       </div>
     </section>
+  );
+}
+
+/** Explica al proveedor si aparece en la busqueda y que le falta (VER-03, PRO-03, PRO-06). */
+function SearchVisibility({ profile }: { profile: ProviderProfile | null }) {
+  const status = profile?.verificationStatus;
+  const checks = [
+    {
+      ok: Boolean(profile),
+      label: "Perfil completo con servicios y comuna",
+      action: !profile ? { to: "/panel/proveedor/perfil", label: "Completar perfil" } : null,
+    },
+    {
+      ok: status === "verificado",
+      label:
+        status === "en_revision"
+          ? "Verificación en revisión por el equipo ASHRAE"
+          : status === "rechazado"
+            ? "Verificación rechazada: corrige y vuelve a enviar"
+            : "Empresa verificada",
+      action:
+        profile && (status === "pendiente" || status === "rechazado")
+          ? { to: "/panel/proveedor/verificacion", label: "Enviar a verificación" }
+          : null,
+    },
+    {
+      ok: Boolean(profile?.isAvailable),
+      label: "Marcada como disponible",
+      action:
+        profile && !profile.isAvailable
+          ? { to: "/panel/proveedor/perfil", label: "Cambiar disponibilidad" }
+          : null,
+    },
+  ];
+  const visible = checks.every((c) => c.ok);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Eye className="size-5 text-primary" />
+          {visible ? "Tu empresa aparece en la búsqueda" : "¿Por qué no apareces en la búsqueda?"}
+        </CardTitle>
+        <CardDescription>
+          Solo se muestran empresas verificadas, y a clientes que estén dentro de tu radio de
+          cobertura
+          {profile ? ` (${profile.coverageRadiusKm} km desde ${profile.commune})` : ""}.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-2">
+          {checks.map((check) => (
+            <li key={check.label} className="flex flex-wrap items-center gap-2 text-sm">
+              {check.ok ? (
+                <CheckCircle2 className="size-4 text-success" />
+              ) : (
+                <Circle className="size-4 text-muted-foreground" />
+              )}
+              <span className={check.ok ? "" : "text-muted-foreground"}>{check.label}</span>
+              {check.action && (
+                <Link to={check.action.to} className="font-medium text-primary hover:underline">
+                  {check.action.label}
+                </Link>
+              )}
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }
