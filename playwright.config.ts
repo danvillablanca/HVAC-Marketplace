@@ -23,16 +23,17 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: "pnpm --filter @hvac/backend dev",
+      command: `pnpm --filter @hvac/backend exec next dev -p ${API_PORT}`,
       url: `${apiUrl}/api/health`,
-      env: { PORT: API_PORT },
+      // La suite E2E corre en modo demo (sin Supabase), igual que en CI.
+      env: { DEMO_MODE: "true", FRONTEND_ORIGIN: webUrl },
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },
     {
-      command: "pnpm --filter @hvac/frontend dev",
+      command: `pnpm --filter @hvac/frontend exec vite --port ${WEB_PORT} --strictPort`,
       url: webUrl,
-      env: { VITE_API_BASE_URL: apiUrl },
+      env: { VITE_API_BASE_URL: apiUrl, VITE_DEMO_MODE: "true" },
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },
