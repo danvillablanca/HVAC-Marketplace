@@ -165,6 +165,14 @@ export interface ServiceRequest {
   quotesCount: number;
   createdAt: string;
   updatedAt: string;
+  /** Vista del proveedor (SOL-02): distancia aproximada a la solicitud. */
+  distanceKm?: number | null;
+  /** Vista del proveedor: estado de su propia cotizacion, si envio una. */
+  myQuoteStatus?: QuoteStatus | null;
+  /** COT-03: fecha en que el proveedor marco el trabajo como completado. */
+  completedAt?: string | null;
+  /** COT-03: confirmacion del cliente (o automatica a los 7 dias). */
+  clientConfirmedAt?: string | null;
 }
 
 export interface Quote {
@@ -179,6 +187,11 @@ export interface Quote {
   validDays: number;
   status: QuoteStatus;
   createdAt: string;
+  /** COT-02: datos para comparar cotizaciones. */
+  providerRating?: number | null;
+  providerReviews?: number;
+  providerSlug?: string | null;
+  distanceKm?: number | null;
 }
 
 export interface ServiceRequestDetail extends ServiceRequest {
@@ -199,8 +212,10 @@ export interface RequestEvent {
 // ---- Notificaciones ----
 
 export const NOTIFICATION_TYPES = [
+  "nueva_solicitud",
   "nueva_cotizacion",
   "cotizacion_aceptada",
+  "cotizacion_rechazada",
   "solicitud_actualizada",
   "verificacion_aprobada",
   "verificacion_rechazada",
