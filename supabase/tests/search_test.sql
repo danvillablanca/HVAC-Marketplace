@@ -1,7 +1,7 @@
 -- Pruebas de busqueda (Bloque C: VER-03 / D-12, BUS-02 y D-18).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(6);
+select plan(9);
 
 -- Origen: centro de Santiago, radio amplio.
 create temp table r as
@@ -24,6 +24,24 @@ select ok(exists (select 1 from public.nearby_providers(-33.4378, -70.6505, 100,
     where not (p.legal_name ilike '%clima%' or p.description ilike '%clima%'
                or exists (select 1 from unnest(n.services) s where s ilike '%clima%'))),
   'PR-018: el filtro de texto solo devuelve coincidencias');
+
+select ok(not exists (
+    select 1 from public.nearby_providers(-33.4378, -70.6505, 100, null, null, null, 200, 0, 4.5, false, 'distance')
+    where coalesce(rating_avg, 0) < 4.5),
+  'PR-018 BUS-03: calificacion minima');
+select ok(not exists (
+    select 1 from public.nearby_providers(-33.4378, -70.6505, 100, null, null, null, 200, 0, null, true, 'distance')
+    where not is_available)
+  and exists (select 1 from r where not is_available),
+  'PR-012/PR-018: solo disponibles excluye a los no disponibles');
+select ok((
+    select bool_and(prev >= cur) from (
+      select coalesce(rating_avg, 0) as cur,
+             lag(coalesce(rating_avg, 0)) over (order by ord) as prev
+      from (select rating_avg, row_number() over () as ord
+            from public.nearby_providers(-33.4378, -70.6505, 100, null, null, null, 200, 0, null, false, 'rating')) x
+    ) y where prev is not null),
+  'PR-018 BUS-03: orden por calificacion descendente');
 
 select * from finish();
 rollback;
