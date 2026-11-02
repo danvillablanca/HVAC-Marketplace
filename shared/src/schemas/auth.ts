@@ -60,4 +60,3 @@ export const passwordResetSchema = z
     path: ["confirm"],
     message: "Las contrasenas no coinciden",
   });
-

@@ -128,8 +128,12 @@ describe("schemas/auth", () => {
     });
 
     it("PR-003 el restablecimiento exige confirmacion igual", () => {
-      expect(passwordResetSchema.safeParse({ password: "nueva1234", confirm: "nueva1234" }).success).toBe(true);
-      expect(passwordResetSchema.safeParse({ password: "nueva1234", confirm: "otra1234" }).success).toBe(false);
+      expect(
+        passwordResetSchema.safeParse({ password: "nueva1234", confirm: "nueva1234" }).success,
+      ).toBe(true);
+      expect(
+        passwordResetSchema.safeParse({ password: "nueva1234", confirm: "otra1234" }).success,
+      ).toBe(false);
     });
   });
 

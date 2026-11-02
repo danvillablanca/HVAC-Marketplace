@@ -55,12 +55,50 @@ export interface ProviderDetail extends ProviderSummary {
   address: string | null;
   location: GeoPoint | null;
   modalities: string[];
+  /** RN-10: telefono y correo ocultos hasta que exista una cotizacion aceptada. */
+  contactHidden?: boolean;
   servicesDetailed: Array<{
     id: string;
     name: string;
     priceFrom: number | null;
     unit: string | null;
   }>;
+}
+
+/** Perfil del proveedor tal como lo ve y edita su duenio. */
+export interface ProviderProfile {
+  id: string;
+  slug: string;
+  legalName: string;
+  rut: string;
+  segment: ServiceSegment;
+  description: string;
+  phone: string;
+  email: string;
+  yearsExperience: number | null;
+  website: string;
+  commune: string;
+  region: string;
+  address: string;
+  coverageRadiusKm: number;
+  isAvailable: boolean;
+  weeklyHours: Partial<
+    Record<
+      "lun" | "mar" | "mie" | "jue" | "vie" | "sab" | "dom",
+      { open: string; close: string } | null
+    >
+  >;
+  modalities: string[];
+  services: Array<{ serviceId: string; name: string; priceFrom: number | null }>;
+  verificationStatus: ProviderVerificationStatus;
+  /** Motivo del ultimo rechazo, si aplica. */
+  verificationNote: string | null;
+}
+
+export interface ServiceCatalogItem {
+  id: string;
+  name: string;
+  segment: ServiceSegment;
 }
 
 export interface Review {
