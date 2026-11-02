@@ -19,12 +19,14 @@ const NAV = [
   { to: "/mapa", label: "Mapa" },
   { to: "/buscar", label: "Buscar proveedores" },
   { to: "/chat", label: "Asistente IA" },
-  { to: "/para-proveedores", label: "Para proveedores" },
+  // Pagina de captacion: no tiene sentido para quien ya tiene cuenta.
+  { to: "/para-proveedores", label: "Para proveedores", guestOnly: true },
 ];
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const nav = NAV.filter((item) => !(item.guestOnly && user));
 
   // Panel link depends on role
   const panelLink = user
@@ -41,7 +43,7 @@ export function SiteHeader() {
         <Logo />
 
         <nav className="hidden items-center gap-1 md:flex" aria-label="Principal">
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -100,7 +102,7 @@ export function SiteHeader() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              {NAV.map((item) => (
+              {nav.map((item) => (
                 <DropdownMenuItem key={item.to} asChild>
                   <Link to={item.to} className="cursor-pointer">
                     {item.label}
