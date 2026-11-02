@@ -1,12 +1,7 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { motion } from "motion/react";
 import { Check, Inbox, MapPin, ShieldCheck, X } from "lucide-react";
-import {
-  formatRut,
-  verificationDecisionSchema,
-  type ProviderDetail,
-  type ProviderVerificationStatus,
-} from "@hvac/shared";
+import { formatRut, type ProviderSummary, type ProviderVerificationStatus } from "@hvac/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,9 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { DEMO_PROVIDERS } from "@/data/providers";
-
-const DECISION_SCHEMA = verificationDecisionSchema.pick({ decision: true, note: true });
+import { usePendingVerifications, useDecideVerification } from "@/features/admin";
 
 const STATUS_LABEL: Record<ProviderVerificationStatus, string> = {
   pendiente: "Pendiente",
@@ -30,33 +23,15 @@ const STATUS_LABEL: Record<ProviderVerificationStatus, string> = {
   rechazado: "Rechazado",
 };
 
-function isPending(status: ProviderVerificationStatus): boolean {
-  return status === "en_revision" || status === "pendiente";
-}
-
 export function AdminVerificationTable() {
-  const [providers, setProviders] = useState<ProviderDetail[]>(() =>
-    DEMO_PROVIDERS.filter((provider) => isPending(provider.verificationStatus)),
-  );
-  const [rejectTarget, setRejectTarget] = useState<ProviderDetail | null>(null);
+  const { data: providers, isLoading } = usePendingVerifications();
+  const decide = useDecideVerification();
+  const [rejectTarget, setRejectTarget] = useState<ProviderSummary | null>(null);
   const [note, setNote] = useState("");
   const [noteError, setNoteError] = useState<string | null>(null);
 
-  const pendingCount = useMemo(
-    () => providers.filter((provider) => isPending(provider.verificationStatus)).length,
-    [providers],
-  );
-
-  function decide(providerId: string, decision: "verificado" | "rechazado", decisionNote?: string) {
-    const parsed = DECISION_SCHEMA.safeParse({ decision, note: decisionNote });
-    if (!parsed.success) return;
-    setProviders((current) =>
-      current.map((provider) =>
-        provider.id === providerId
-          ? { ...provider, verificationStatus: parsed.data.decision }
-          : provider,
-      ),
-    );
+  function handleApprove(providerId: string) {
+    decide.mutate({ providerId, decision: "verificado" });
   }
 
   function handleReject() {
@@ -66,11 +41,19 @@ export function AdminVerificationTable() {
       setNoteError("Indica un motivo de al menos 5 caracteres.");
       return;
     }
-    decide(rejectTarget.id, "rechazado", trimmed);
-    setRejectTarget(null);
-    setNote("");
-    setNoteError(null);
+    decide.mutate(
+      { providerId: rejectTarget.id, decision: "rechazado", note: trimmed },
+      {
+        onSuccess: () => {
+          setRejectTarget(null);
+          setNote("");
+          setNoteError(null);
+        },
+      },
+    );
   }
+
+  const pendingCount = providers?.length ?? 0;
 
   return (
     <section className="container-page space-y-8 py-10">
@@ -94,7 +77,9 @@ export function AdminVerificationTable() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {providers.length === 0 ? (
+          {isLoading ? (
+            <p className="py-8 text-center text-muted-foreground">Cargando verificaciones...</p>
+          ) : !providers || providers.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
               <ShieldCheck className="size-8 text-success" />
               <p className="font-medium">No hay proveedores pendientes</p>
@@ -112,9 +97,6 @@ export function AdminVerificationTable() {
                       Proveedor
                     </th>
                     <th scope="col" className="py-2 pr-4 font-medium">
-                      RUT
-                    </th>
-                    <th scope="col" className="py-2 pr-4 font-medium">
                       Ubicacion
                     </th>
                     <th scope="col" className="py-2 pr-4 font-medium">
@@ -129,68 +111,57 @@ export function AdminVerificationTable() {
                   </tr>
                 </thead>
                 <tbody>
-                  {providers.map((provider, index) => {
-                    const resolved = !isPending(provider.verificationStatus);
-                    return (
-                      <motion.tr
-                        key={provider.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.2, delay: index * 0.03 }}
-                        className="border-b border-border/60 last:border-0"
-                      >
-                        <td className="py-3 pr-4">
-                          <p className="font-medium text-foreground">{provider.legalName}</p>
-                          <p className="text-xs text-muted-foreground">{provider.email}</p>
-                        </td>
-                        <td className="py-3 pr-4 text-muted-foreground">
-                          {formatRut(provider.rut)}
-                        </td>
-                        <td className="py-3 pr-4">
-                          <span className="inline-flex items-center gap-1 text-muted-foreground">
-                            <MapPin className="size-3.5" />
-                            {provider.commune}
-                          </span>
-                        </td>
-                        <td className="py-3 pr-4 capitalize text-muted-foreground">
-                          {provider.segment}
-                        </td>
-                        <td className="py-3 pr-4">
-                          <Badge variant={resolved ? "secondary" : "warning"}>
-                            {STATUS_LABEL[provider.verificationStatus]}
-                          </Badge>
-                        </td>
-                        <td className="py-3">
-                          {resolved ? (
-                            <span className="text-xs text-muted-foreground">Resuelto</span>
-                          ) : (
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => decide(provider.id, "verificado")}
-                              >
-                                <Check className="size-4" />
-                                Aprobar
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setRejectTarget(provider);
-                                  setNote("");
-                                  setNoteError(null);
-                                }}
-                              >
-                                <X className="size-4" />
-                                Rechazar
-                              </Button>
-                            </div>
-                          )}
-                        </td>
-                      </motion.tr>
-                    );
-                  })}
+                  {providers.map((provider, index) => (
+                    <motion.tr
+                      key={provider.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.2, delay: index * 0.03 }}
+                      className="border-b border-border/60 last:border-0"
+                    >
+                      <td className="py-3 pr-4">
+                        <p className="font-medium text-foreground">{provider.legalName}</p>
+                      </td>
+                      <td className="py-3 pr-4">
+                        <span className="inline-flex items-center gap-1 text-muted-foreground">
+                          <MapPin className="size-3.5" />
+                          {provider.commune ?? provider.city ?? "—"}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4 capitalize text-muted-foreground">
+                        {provider.segment}
+                      </td>
+                      <td className="py-3 pr-4">
+                        <Badge variant="warning">{STATUS_LABEL[provider.verificationStatus]}</Badge>
+                      </td>
+                      <td className="py-3">
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="default"
+                            disabled={decide.isPending}
+                            onClick={() => handleApprove(provider.id)}
+                          >
+                            <Check className="size-4" />
+                            Aprobar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={decide.isPending}
+                            onClick={() => {
+                              setRejectTarget(provider);
+                              setNote("");
+                              setNoteError(null);
+                            }}
+                          >
+                            <X className="size-4" />
+                            Rechazar
+                          </Button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -252,7 +223,7 @@ export function AdminVerificationTable() {
             >
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={handleReject}>
+            <Button variant="destructive" onClick={handleReject} disabled={decide.isPending}>
               Confirmar rechazo
             </Button>
           </DialogFooter>

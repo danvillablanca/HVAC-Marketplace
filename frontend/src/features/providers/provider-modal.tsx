@@ -7,6 +7,7 @@ import {
   Phone,
   ShieldAlert,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { formatCLP, formatPhone } from "@hvac/shared";
 import { useProvider, useProviderReviews } from "@/features/providers/hooks";
 import {
@@ -154,6 +155,9 @@ export function ProviderModal({ providerId, open, onOpenChange }: ProviderModalP
                       </a>
                     </Button>
                   )}
+                  <Button asChild variant="link">
+                    <Link to={`/proveedor/${provider.id}`}>Ver perfil completo</Link>
+                  </Button>
                 </div>
               </section>
 

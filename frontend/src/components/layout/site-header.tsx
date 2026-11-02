@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { LayoutDashboard, LogIn, Menu, MessageCircleQuestion, Search } from "lucide-react";
+import { LayoutDashboard, LogIn, Menu, MessageCircleQuestion, Search, User } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/features/auth";
+import { NotificationBell } from "@/features/notifications";
 
 const NAV = [
   { to: "/mapa", label: "Mapa" },
@@ -22,6 +24,16 @@ const NAV = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const { user, signOut } = useAuth();
+
+  // Panel link depends on role
+  const panelLink = user
+    ? user.role === "proveedor"
+      ? "/panel/proveedor"
+      : user.role === "admin"
+        ? "/panel/admin/verificaciones"
+        : "/panel/solicitudes"
+    : null;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-md">
@@ -47,15 +59,39 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-1.5">
           <ThemeToggle />
-          <Button asChild variant="ghost" className="hidden sm:inline-flex">
-            <Link to="/ingresar">
-              <LogIn className="size-4" />
-              Ingresar
-            </Link>
-          </Button>
-          <Button asChild className="hidden sm:inline-flex">
-            <Link to="/registro">Crear cuenta</Link>
-          </Button>
+          {user ? (
+            <>
+              <NotificationBell />
+              {panelLink && (
+                <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+                  <Link to={panelLink}>
+                    <User className="size-4 mr-1" />
+                    Mi panel
+                  </Link>
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="hidden sm:inline-flex"
+                onClick={() => signOut()}
+              >
+                Salir
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button asChild variant="ghost" className="hidden sm:inline-flex">
+                <Link to="/ingresar">
+                  <LogIn className="size-4" />
+                  Ingresar
+                </Link>
+              </Button>
+              <Button asChild className="hidden sm:inline-flex">
+                <Link to="/registro">Crear cuenta</Link>
+              </Button>
+            </>
+          )}
 
           <DropdownMenu open={open} onOpenChange={setOpen}>
             <DropdownMenuTrigger asChild className="md:hidden">

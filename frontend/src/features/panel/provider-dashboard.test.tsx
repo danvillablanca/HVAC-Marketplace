@@ -9,28 +9,27 @@ beforeEach(() => {
 });
 
 describe("ProviderDashboard", () => {
-  it("muestra las metricas principales", () => {
+  it("muestra las métricas principales", () => {
     renderWithProviders(<ProviderDashboard />);
 
-    expect(screen.getByText("Visitas al perfil")).toBeInTheDocument();
-    expect(screen.getByText("1.248")).toBeInTheDocument();
-    expect(screen.getByText("Contactos")).toBeInTheDocument();
-    expect(screen.getByText("Rating promedio")).toBeInTheDocument();
-    expect(screen.getByText("4,8")).toBeInTheDocument();
+    expect(screen.getByText("Solicitudes abiertas")).toBeInTheDocument();
+    expect(screen.getByText("Total solicitudes")).toBeInTheDocument();
+    expect(screen.getByText("Notificaciones")).toBeInTheDocument();
   });
 
-  it("muestra la tabla de leads con sus estados", () => {
+  it("muestra la sección de solicitudes disponibles con link a bandeja", () => {
     renderWithProviders(<ProviderDashboard />);
 
-    for (const header of ["Cliente", "Servicio", "Monto estimado", "Fecha", "Estado"]) {
-      expect(screen.getByRole("columnheader", { name: header })).toBeInTheDocument();
-    }
+    expect(screen.getByText("Solicitudes disponibles")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Ir a la bandeja/ })).toBeInTheDocument();
+  });
 
-    expect(screen.getByText("Constructora Andes")).toBeInTheDocument();
-    expect(screen.getByText("Clinica Los Robles")).toBeInTheDocument();
-    expect(screen.getByText("Nuevo")).toBeInTheDocument();
-    expect(screen.getByText("Cerrado")).toBeInTheDocument();
-    expect(screen.getByText("Perdido")).toBeInTheDocument();
+  it("muestra tarjetas de verificación y bandeja", () => {
+    renderWithProviders(<ProviderDashboard />);
+
+    expect(screen.getByText("Estado de verificacion")).toBeInTheDocument();
+    expect(screen.getByText("Bandeja de cotizaciones")).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /bandeja/ }).length).toBeGreaterThanOrEqual(1);
   });
 
   it("saluda al proveedor autenticado por su nombre", () => {

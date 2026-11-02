@@ -22,7 +22,7 @@ beforeEach(() => {
 });
 
 describe("ClientRequestsPage", () => {
-  it("renderiza las solicitudes para un cliente autenticado", () => {
+  it("renderiza la página para un cliente autenticado", () => {
     window.localStorage.setItem(
       SESSION_KEY,
       JSON.stringify({
@@ -35,14 +35,13 @@ describe("ClientRequestsPage", () => {
 
     renderAt(<ClientRequestsPage />);
 
-    expect(screen.getByText("Mis solicitudes")).toBeInTheDocument();
-    expect(screen.getByText("Hogar Fresco Instalaciones")).toBeInTheDocument();
+    expect(screen.getByText(/Hola/)).toBeInTheDocument();
+    expect(screen.getByText(/Nueva solicitud/)).toBeInTheDocument();
   });
 
   it("redirige a ingreso cuando no hay sesion", () => {
     renderAt(<ClientRequestsPage />);
 
     expect(screen.getByText("PANTALLA DE INGRESO")).toBeInTheDocument();
-    expect(screen.queryByText("Mis solicitudes")).not.toBeInTheDocument();
   });
 });
