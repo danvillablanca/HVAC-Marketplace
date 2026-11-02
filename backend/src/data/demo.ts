@@ -397,18 +397,22 @@ export function searchDemoProviders(input: NearbySearchInput): ProviderSummary[]
   const origin = { lat: input.lat, lng: input.lng };
   const radius = input.radiusKm * 1000;
   const needle = input.query?.toLowerCase();
-  return demoProviders
-    .filter((provider) => !input.segment || provider.segment === input.segment)
-    .filter(
-      (provider) =>
-        !input.serviceId ||
-        provider.servicesDetailed.some((service) => service.id === input.serviceId),
-    )
-    .filter((provider) => matchesQuery(provider, needle))
-    .map((provider) => toProviderSummary(provider, origin))
-    .filter((provider) => (provider.distanceMeters ?? Infinity) <= radius)
-    .sort((a, b) => (a.distanceMeters ?? 0) - (b.distanceMeters ?? 0))
-    .slice(input.offset, input.offset + input.limit);
+  return (
+    demoProviders
+      // VER-03 / D-12: solo proveedores verificados aparecen en la busqueda.
+      .filter((provider) => provider.verificationStatus === "verificado")
+      .filter((provider) => !input.segment || provider.segment === input.segment)
+      .filter(
+        (provider) =>
+          !input.serviceId ||
+          provider.servicesDetailed.some((service) => service.id === input.serviceId),
+      )
+      .filter((provider) => matchesQuery(provider, needle))
+      .map((provider) => toProviderSummary(provider, origin))
+      .filter((provider) => (provider.distanceMeters ?? Infinity) <= radius)
+      .sort((a, b) => (a.distanceMeters ?? 0) - (b.distanceMeters ?? 0))
+      .slice(input.offset, input.offset + input.limit)
+  );
 }
 
 export interface DemoListOptions {

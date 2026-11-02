@@ -16,7 +16,7 @@ function mapServices(row: Row): ProviderDetail["servicesDetailed"] {
   const raw = Array.isArray(row.provider_services) ? row.provider_services : [];
   return raw.map((service: Row) => ({
     id: String(service.id ?? service.service_id ?? ""),
-    name: String(service.name ?? ""),
+    name: String(service.name ?? service.services?.name ?? ""),
     priceFrom: service.price_from ?? service.priceFrom ?? null,
     unit: service.unit ?? null,
   }));
@@ -51,7 +51,11 @@ export function mapProviderSummaryRow(
       row.lat != null && row.lng != null
         ? { lat: Number(row.lat), lng: Number(row.lng) }
         : (row.location ?? null),
-    services: services.map((service) => service.name),
+    // nearby_providers devuelve los nombres en `services` (text[]); las filas de tabla, en provider_services.
+    services:
+      Array.isArray(row.services) && row.services.every((name: unknown) => typeof name === "string")
+        ? (row.services as string[])
+        : services.map((service) => service.name),
     priceFrom: row.price_from ?? row.priceFrom ?? minPrice(services),
     isDemo: Boolean(row.is_demo ?? row.isDemo ?? false),
   };
