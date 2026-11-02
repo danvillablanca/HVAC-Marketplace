@@ -81,13 +81,17 @@
 |---|---|---|---|---|---|---|---|
 | D-01 | Crítica | El backend no validaba JWT en endpoints protegidos | No existía middleware de auth | `requireUser`/`requireRole` en `backend/src/lib/auth.ts` | Corregido | 01/11/2026 | 96d5388 |
 | D-02 | Alta | El modo demo se activaba en silencio sin variable de control | Fallback implícito sin Supabase | `DEMO_MODE`/`VITE_DEMO_MODE` explícitos | Corregido | 01/11/2026 | 913841b |
-| D-03 | Media | Seed insuficiente (10 proveedores, sin usuarios en `auth.users`) | Seed inicial mínimo | Bloque A | Abierto | 01/11/2026 | — |
+| D-03 | Media | Seed insuficiente (10 proveedores, sin usuarios en `auth.users`) | Seed inicial mínimo | Seed con 36 proveedores, comunas, solicitudes en 6 estados y 5 usuarios demo; pruebas pgTAP | Corregido | 02/11/2026 | Bloque A |
 | D-04 | Alta | `npm run dev` fallaba en Windows | `next dev -p ${PORT:-3001}` es sintaxis bash | Puerto fijo `-p 3001` | Corregido | 02/11/2026 | b6dbde8 |
 | D-05 | Crítica | Cualquiera puede registrarse como admin vía Supabase Auth (incumple RN-01) | `handle_new_user` acepta `role = admin` desde metadatos | Bloque B: restringir a cliente/proveedor | Abierto | 02/11/2026 | — |
 | D-06 | Alta | "NetworkError" al registrarse con el `.env` de ejemplo | Las claves `your-...` se tomaban como Supabase configurado | Valores `your-` cuentan como vacíos | Corregido | 02/11/2026 | 913841b |
 | D-07 | Alta | En modo demo el proveedor no veía solicitudes (bandeja vacía, 403 en detalle) | El filtro demo solo permitía al cliente dueño | Regla `demoCanSee` (abiertas + cotizadas) | Corregido | 02/11/2026 | de6ae21 |
 | D-08 | Media | `pnpm lint` fallaba en todos los equipos Windows | `core.autocrlf` genera CRLF y Prettier exigía LF | `endOfLine: auto` en `.prettierrc.json` | Corregido | 02/11/2026 | b6dbde8 |
 | D-09 | Baja | Desde el modal de proveedor no se llegaba al perfil `/proveedor/:id` | Faltaba enlace | Botón "Ver perfil completo" | Corregido | 02/11/2026 | 7dc1afb |
+| D-10 | Media | El nombre del usuario no se guarda en `profiles` al registrarse | El frontend envía `fullName` y `handle_new_user` lee `full_name` | Bloque B | Abierto | 02/11/2026 | — |
+| D-11 | Crítica | Cualquier usuario autenticado puede cambiar el estado de solicitudes ajenas | `transition_request` es `security definer` y no valida actor ni rol | Bloque E: validar actor por transición | Abierto | 02/11/2026 | — |
+| D-12 | Alta | La búsqueda muestra proveedores no verificados marcados `is_demo` (incumple VER-03) | `nearby_providers` filtra `verificado or is_demo` | Bloque C | Abierto | 02/11/2026 | — |
+| D-13 | Media | `supabase start` falla con Supabase CLI v3 | `[inbucket]` ya no existe en `config.toml` | Renombrado a `[local_smtp]` | Corregido | 02/11/2026 | Bloque A |
 
 ## 5. URL de producción y credenciales demo
 

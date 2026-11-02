@@ -170,8 +170,9 @@ Si `/api/health` responde `ok: true`, el backend está conectado correctamente.
 
 El proyecto trae dos capas de datos de demostración:
 
-1. **Seed de Supabase** (`supabase/seed`): proveedores, servicios, reseñas y usuarios demo. Se
-   cargan con `pnpm db:reset`.
+1. **Seed de Supabase** (`supabase/seed.sql`): comunas, 36 proveedores, solicitudes en todos los
+   estados, cotizaciones, reseñas y 5 usuarios demo en `auth.users`. Se cargan con `pnpm db:reset`
+   y se verifican con `pnpm db:test`. Credenciales y detalle en [demo.md](./demo.md).
 2. **Fallback en el frontend** (`frontend/src/data/providers.ts`): proveedores marcados con
    `isDemo = true` que el frontend usa cuando el backend no responde. Esto permite ver el mapa y
    las fichas sin base de datos.
