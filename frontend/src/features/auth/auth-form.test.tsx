@@ -124,6 +124,7 @@ describe("AuthForm (registro)", () => {
     await user.type(screen.getByLabelText("Contrasena"), "password1");
     await user.type(screen.getByLabelText("RUT de la empresa"), "12.345.678-9");
     await user.type(screen.getByLabelText("Telefono"), "+56 9 1234 5678");
+    await user.click(screen.getByRole("checkbox"));
     await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
 
     expect(await screen.findByText("RUT chileno invalido")).toBeInTheDocument();
@@ -140,6 +141,7 @@ describe("AuthForm (registro)", () => {
     await user.type(screen.getByLabelText("Contrasena"), "password1");
     await user.type(screen.getByLabelText("RUT de la empresa"), "12.345.678-5");
     await user.type(screen.getByLabelText("Telefono"), "+56 9 1234 5678");
+    await user.click(screen.getByRole("checkbox"));
     await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
 
     await waitFor(() => expect(authMocks.signUp).toHaveBeenCalledTimes(1));
@@ -150,6 +152,7 @@ describe("AuthForm (registro)", () => {
       role: "proveedor",
       rut: "123456785",
       phone: "+56912345678",
+      acceptTerms: true,
     });
   });
 
@@ -160,6 +163,7 @@ describe("AuthForm (registro)", () => {
     await user.type(screen.getByLabelText("Nombre completo"), "Cliente Demo Sur");
     await user.type(screen.getByLabelText("Correo electronico"), "cliente@test.cl");
     await user.type(screen.getByLabelText("Contrasena"), "password1");
+    await user.click(screen.getByRole("checkbox"));
     await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
 
     await waitFor(() => expect(authMocks.signUp).toHaveBeenCalledTimes(1));
@@ -171,5 +175,61 @@ describe("AuthForm (registro)", () => {
     });
     expect(payload.rut).toBeUndefined();
     expect(payload.phone).toBeUndefined();
+  });
+});
+
+describe("AuthForm (cuentas, Bloque B)", () => {
+  it("PR-001 no registra sin aceptar terminos y privacidad", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<AuthForm mode="register" />);
+
+    await user.type(screen.getByLabelText("Nombre completo"), "Cliente Sin Terminos");
+    await user.type(screen.getByLabelText("Correo electronico"), "sinterminos@test.cl");
+    await user.type(screen.getByLabelText("Contrasena"), "password1");
+    await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
+
+    expect(await screen.findByText(/Debes aceptar los terminos/)).toBeInTheDocument();
+    expect(authMocks.signUp).not.toHaveBeenCalled();
+    expect(screen.getByRole("link", { name: "Términos y condiciones" })).toHaveAttribute(
+      "href",
+      "/terminos",
+    );
+    expect(screen.getByRole("link", { name: "Política de privacidad" })).toHaveAttribute(
+      "href",
+      "/privacidad",
+    );
+  });
+
+  it("PR-001 RN-01 el selector de rol no ofrece admin", () => {
+    renderWithProviders(<AuthForm mode="register" />);
+    const options = Array.from(
+      (screen.getByLabelText("Tipo de cuenta") as HTMLSelectElement).options,
+    ).map((o) => o.value);
+    expect(options).toEqual(["cliente", "proveedor"]);
+  });
+
+  it("PR-003 el login enlaza a la recuperacion de contrasena", () => {
+    renderWithProviders(<AuthForm mode="login" />);
+    expect(screen.getByRole("link", { name: "¿Olvidaste tu contraseña?" })).toHaveAttribute(
+      "href",
+      "/recuperar",
+    );
+  });
+
+  it("PR-006 oculta Google si no esta configurado y lo muestra si lo esta", async () => {
+    const { unmount } = renderWithProviders(<AuthForm mode="login" />);
+    expect(screen.queryByRole("button", { name: "Continuar con Google" })).not.toBeInTheDocument();
+    unmount();
+
+    const signInWithGoogle = vi.fn().mockResolvedValue(undefined);
+    authMocks.useAuth.mockReturnValue({
+      ...authMocks.useAuth(),
+      googleEnabled: true,
+      signInWithGoogle,
+    });
+    const user = userEvent.setup();
+    renderWithProviders(<AuthForm mode="login" />);
+    await user.click(screen.getByRole("button", { name: "Continuar con Google" }));
+    expect(signInWithGoogle).toHaveBeenCalledTimes(1);
   });
 });

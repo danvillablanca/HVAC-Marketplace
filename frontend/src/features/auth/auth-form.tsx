@@ -43,6 +43,7 @@ interface FormValues {
   role: UserRole;
   rut: string;
   phone: string;
+  acceptTerms: boolean;
 }
 
 const INITIAL_VALUES: FormValues = {
@@ -52,6 +53,7 @@ const INITIAL_VALUES: FormValues = {
   role: "cliente",
   rut: "",
   phone: "",
+  acceptTerms: false,
 };
 
 /** Esquema de validacion segun el modo; exige RUT/telefono cuando el rol es proveedor. */
@@ -80,18 +82,22 @@ const registerWithRole = registerSchema.superRefine((value, ctx) => {
 });
 
 export function AuthForm({ mode, redirectTo, className }: AuthFormProps) {
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, signInWithGoogle, googleEnabled, user } = useAuth();
   const navigate = useNavigate();
   const [values, setValues] = useState<FormValues>(INITIAL_VALUES);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [authenticated, setAuthenticated] = useState(false);
 
   useEffect(() => {
-    if (!authenticated || !user) return;
+    // Con sesion activa (submit o regreso desde Google) se va directo al panel.
+    if (!user) return;
+    if (user.needsRole) {
+      navigate("/elegir-rol", { replace: true });
+      return;
+    }
     navigate(redirectTo ?? PANEL_BY_ROLE[user.role], { replace: true });
-  }, [authenticated, user, redirectTo, navigate]);
+  }, [user, redirectTo, navigate]);
 
   function update<K extends keyof FormValues>(field: K, value: FormValues[K]) {
     setValues((current) => ({ ...current, [field]: value }));
@@ -125,7 +131,6 @@ export function AuthForm({ mode, redirectTo, className }: AuthFormProps) {
       setSubmitting(true);
       try {
         await signIn(parsed.data.email, parsed.data.password);
-        setAuthenticated(true);
       } catch (error) {
         setFormError(error instanceof Error ? error.message : "Ocurrio un error inesperado.");
       } finally {
@@ -140,6 +145,7 @@ export function AuthForm({ mode, redirectTo, className }: AuthFormProps) {
       fullName: values.fullName,
       role: values.role,
       ...(values.role === "proveedor" ? { rut: values.rut, phone: values.phone } : {}),
+      acceptTerms: values.acceptTerms,
     };
     const parsed = registerWithRole.safeParse(payload);
     if (!parsed.success) {
@@ -151,7 +157,6 @@ export function AuthForm({ mode, redirectTo, className }: AuthFormProps) {
     setSubmitting(true);
     try {
       await signUp(parsed.data as RegisterInput);
-      setAuthenticated(true);
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Ocurrio un error inesperado.");
     } finally {
@@ -160,6 +165,15 @@ export function AuthForm({ mode, redirectTo, className }: AuthFormProps) {
   }
 
   const isRegister = mode === "register";
+
+  async function handleGoogle() {
+    setFormError(null);
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Ocurrio un error inesperado.");
+    }
+  }
 
   return (
     <form onSubmit={handleSubmit} noValidate className={cn("space-y-5", className)}>
@@ -331,9 +345,68 @@ export function AuthForm({ mode, redirectTo, className }: AuthFormProps) {
         )}
       </div>
 
+      {isRegister && (
+        <div className="space-y-1.5">
+          <div className="flex items-start gap-2">
+            <input
+              id="acceptTerms"
+              name="acceptTerms"
+              type="checkbox"
+              className="mt-1 size-4 accent-primary"
+              checked={values.acceptTerms}
+              onChange={(event) => update("acceptTerms", event.target.checked)}
+              aria-invalid={Boolean(errors.acceptTerms)}
+              aria-describedby={errors.acceptTerms ? "acceptTerms-error" : undefined}
+            />
+            <Label htmlFor="acceptTerms" className="text-sm font-normal leading-snug">
+              Acepto los{" "}
+              <Link
+                to="/terminos"
+                target="_blank"
+                className="font-medium text-primary hover:underline"
+              >
+                Términos y condiciones
+              </Link>{" "}
+              y la{" "}
+              <Link
+                to="/privacidad"
+                target="_blank"
+                className="font-medium text-primary hover:underline"
+              >
+                Política de privacidad
+              </Link>
+            </Label>
+          </div>
+          {errors.acceptTerms && (
+            <p
+              id="acceptTerms-error"
+              role="alert"
+              aria-live="polite"
+              className="text-sm text-destructive"
+            >
+              {errors.acceptTerms}
+            </p>
+          )}
+        </div>
+      )}
+
+      {!isRegister && (
+        <p className="-mt-2 text-right text-sm">
+          <Link to="/recuperar" className="font-medium text-primary hover:underline">
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </p>
+      )}
+
       <Button type="submit" size="lg" className="w-full" disabled={submitting}>
         {submitting ? "Procesando..." : isRegister ? "Crear cuenta" : "Ingresar"}
       </Button>
+
+      {googleEnabled && (
+        <Button type="button" variant="outline" size="lg" className="w-full" onClick={handleGoogle}>
+          Continuar con Google
+        </Button>
+      )}
 
       <p className="text-center text-sm text-muted-foreground">
         {isRegister ? (
