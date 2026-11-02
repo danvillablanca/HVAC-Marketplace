@@ -20,6 +20,7 @@
     "db:start": "npx supabase start",
     "db:stop": "npx supabase stop",
     "db:reset": "npx supabase db reset",
+    "db:test": "npx supabase test db",
     "db:types": "npx supabase gen types typescript --local > shared/src/types/database.ts"
   },
   "devDependencies": {

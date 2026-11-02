@@ -47,3 +47,18 @@ jobs:
         run: pnpm test:e2e
         env:
           NEXT_TELEMETRY_DISABLED: "1"
+
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Start Supabase (migraciones + seed)
+        run: npx --yes supabase@3 start
+
+      - name: Database tests (pgTAP)
+        run: npx --yes supabase@3 test db
