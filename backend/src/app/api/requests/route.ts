@@ -1,6 +1,6 @@
 import { serviceRequestCreateSchema } from "@hvac/shared";
 import { corsPreflight, handleErrors, jsonOk, parseBody } from "@/lib/http";
-import { requireUser } from "@/lib/auth";
+import { requireRole, requireUser } from "@/lib/auth";
 import { createRequest, listRequests } from "@/services/requests";
 
 export function OPTIONS() {
@@ -17,7 +17,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   return handleErrors(async () => {
-    const user = await requireUser(req);
+    const user = await requireRole(req, ["cliente"]);
     const input = await parseBody(serviceRequestCreateSchema, req);
     const request = await createRequest(input, user.id);
     return jsonOk(request, { status: 201 });
