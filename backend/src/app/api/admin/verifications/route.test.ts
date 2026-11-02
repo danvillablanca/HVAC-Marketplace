@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { demoProviders } from "@/data/demo";
-import { jsonRequest } from "@/test/http";
+import { adminRequest, jsonRequest } from "@/test/http";
 import { GET, OPTIONS, PATCH } from "./route";
 
 describe("GET /api/admin/verifications", () => {
   it("lista los proveedores pendientes o en revisión", async () => {
-    const res = await GET();
+    const res = await GET(adminRequest("GET", "/api/admin/verifications"));
 
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -15,6 +15,18 @@ describe("GET /api/admin/verifications", () => {
     for (const provider of body.data) {
       expect(["pendiente", "en_revision"]).toContain(provider.verificationStatus);
     }
+  });
+
+  it("rechaza acceso sin rol admin", async () => {
+    const res = await GET(jsonRequest("GET", "/api/admin/verifications"));
+    expect(res.status).toBe(403);
+  });
+
+  it("rechaza sin autenticación", async () => {
+    const res = await GET(
+      jsonRequest("GET", "/api/admin/verifications", undefined, { noAuth: true }),
+    );
+    expect(res.status).toBe(401);
   });
 });
 
@@ -31,7 +43,7 @@ describe("PATCH /api/admin/verifications", () => {
 
     try {
       const res = await PATCH(
-        jsonRequest("PATCH", "/api/admin/verifications", {
+        adminRequest("PATCH", "/api/admin/verifications", {
           providerId: fixtureId,
           decision: "verificado",
           note: "Documentación correcta",
@@ -48,7 +60,7 @@ describe("PATCH /api/admin/verifications", () => {
 
   it("rechaza una decisión inválida", async () => {
     const res = await PATCH(
-      jsonRequest("PATCH", "/api/admin/verifications", {
+      adminRequest("PATCH", "/api/admin/verifications", {
         providerId: randomUUID(),
         decision: "quizas",
       }),
@@ -57,6 +69,16 @@ describe("PATCH /api/admin/verifications", () => {
     expect(res.status).toBe(422);
     const body = await res.json();
     expect(body.error.code).toBe("validation_error");
+  });
+
+  it("rechaza acceso sin rol admin", async () => {
+    const res = await PATCH(
+      jsonRequest("PATCH", "/api/admin/verifications", {
+        providerId: randomUUID(),
+        decision: "verificado",
+      }),
+    );
+    expect(res.status).toBe(403);
   });
 
   it("OPTIONS responde 204 con CORS", () => {

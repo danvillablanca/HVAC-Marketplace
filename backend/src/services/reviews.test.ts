@@ -12,7 +12,7 @@ describe("createReview (fallback demo)", () => {
       comment: "Trabajo impecable",
     });
 
-    const review = await createReview(input);
+    const review = await createReview(input, "test-user");
 
     expect(review.providerId).toBe(input.providerId);
     expect(review.rating).toBe(5);
@@ -29,7 +29,7 @@ describe("createReview (fallback demo)", () => {
       rating: 4,
     });
 
-    const review = await createReview(input);
+    const review = await createReview(input, "test-user");
     expect(getDemoReviews(input.providerId)).toContainEqual(review);
   });
 
@@ -39,7 +39,7 @@ describe("createReview (fallback demo)", () => {
       rating: 3,
     });
 
-    const review = await createReview(input);
+    const review = await createReview(input, "test-user");
     expect(review.comment).toBeNull();
   });
 });

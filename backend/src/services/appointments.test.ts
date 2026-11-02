@@ -15,7 +15,7 @@ function makeInput() {
 describe("createAppointment (fallback demo)", () => {
   it("crea una cita en estado propuesta", async () => {
     const input = makeInput();
-    const appointment = await createAppointment(input);
+    const appointment = await createAppointment(input, "test-user");
 
     expect(appointment.leadId).toBe(input.leadId);
     expect(appointment.startsAt).toBe(input.startsAt);
@@ -34,10 +34,10 @@ describe("createAppointment (fallback demo)", () => {
 
 describe("updateAppointment (fallback demo)", () => {
   it("actualiza el estado de una cita existente", async () => {
-    const appointment = await createAppointment(makeInput());
+    const appointment = await createAppointment(makeInput(), "test-user");
     const input = appointmentUpdateSchema.parse({ status: "confirmada" });
 
-    const updated = await updateAppointment(appointment.id, input);
+    const updated = await updateAppointment(appointment.id, input, "test-user");
 
     expect(updated.id).toBe(appointment.id);
     expect(updated.status).toBe("confirmada");
@@ -47,7 +47,7 @@ describe("updateAppointment (fallback demo)", () => {
   it("lanza HttpError 404 si la cita no existe", async () => {
     const input = appointmentUpdateSchema.parse({ status: "cancelada" });
 
-    const error = await updateAppointment(randomUUID(), input).catch((err) => err);
+    const error = await updateAppointment(randomUUID(), input, "test-user").catch((err) => err);
     expect(error).toBeInstanceOf(HttpError);
     expect(error.status).toBe(404);
     expect(error.code).toBe("not_found");

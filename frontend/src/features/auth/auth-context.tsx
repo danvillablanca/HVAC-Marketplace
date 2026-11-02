@@ -10,6 +10,7 @@ import {
 import type { User } from "@supabase/supabase-js";
 import { USER_ROLES, type RegisterInput, type UserRole } from "@hvac/shared";
 import { getSupabase } from "@/lib/supabase";
+import { isDemoMode } from "@/lib/env";
 
 /** Usuario autenticado expuesto por el contexto. */
 export interface AuthUser {
@@ -135,8 +136,9 @@ function mapSupabaseUser(user: User): AuthUser {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const supabase = getSupabase();
-  const [user, setUser] = useState<AuthUser | null>(() => (supabase ? null : readSession()));
-  const [loading, setLoading] = useState<boolean>(() => Boolean(supabase));
+  const useDemoAuth = !supabase && isDemoMode;
+  const [user, setUser] = useState<AuthUser | null>(() => (useDemoAuth ? readSession() : null));
+  const [loading, setLoading] = useState<boolean>(() => !useDemoAuth);
 
   useEffect(() => {
     if (!supabase) {
@@ -166,6 +168,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(
     async (email: string, password: string) => {
       if (!supabase) {
+        if (!isDemoMode) {
+          throw new Error("El servicio de autenticación no está disponible.");
+        }
         const normalized = email.trim().toLowerCase();
         const account = readAccounts().find(
           (candidate) => candidate.email === normalized && candidate.password === password,
@@ -195,6 +200,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback(
     async (input: RegisterInput) => {
       if (!supabase) {
+        if (!isDemoMode) {
+          throw new Error("El servicio de autenticación no está disponible.");
+        }
         const accounts = readAccounts();
         if (accounts.some((account) => account.email === input.email)) {
           throw new Error("Ya existe una cuenta con ese correo.");
