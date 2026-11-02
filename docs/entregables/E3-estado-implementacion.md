@@ -1,7 +1,9 @@
 # E3 — Estado de Implementación y Trazabilidad
 
 **Proyecto:** HVAC Connect (IIC3113, Grupo 1)
-**Última actualización:** 01/11/2026
+**Última actualización:** 02/11/2026
+
+> Resultados "demo": ejecutados contra `DEMO_MODE=true` (sin Supabase) con un recorrido Playwright de `docs/guias/flujos-funcionales.md` (37/37 pasos OK). Aún no hay ejecución contra Supabase local (`DEMO_MODE=false`) porque falta Docker en el equipo de desarrollo.
 
 ---
 
@@ -9,11 +11,11 @@
 
 | ID | Resumen | Prio | Estado | Evidencia | Caso PR | Resultado | Fecha |
 |---|---|---|---|---|---|---|---|
-| REQ-AUT-01 | Registro con nombre, email, contraseña y rol | A | Parcial | `auth-context.tsx` (demo), Supabase Auth | PR-001 | No ejecutada | — |
-| REQ-AUT-02 | Login email/contraseña | A | Parcial | `auth-context.tsx` (demo), Supabase Auth | PR-002 | No ejecutada | — |
+| REQ-AUT-01 | Registro con nombre, email, contraseña y rol | A | Parcial | `auth-form.tsx` + `auth-context.tsx` (Supabase `signUp` y demo). Falta consentimiento y `handle_new_user` acepta rol admin (D-05) | PR-001 | OK (demo, E2E manual) | 02/11/2026 |
+| REQ-AUT-02 | Login email/contraseña | A | Parcial | `signInWithPassword` + demo; mensaje de error genérico. Falta bloqueo por intentos | PR-002 | OK (demo, E2E manual) | 02/11/2026 |
 | REQ-AUT-03 | Recuperación de contraseña | M | Pendiente | — | PR-003 | No ejecutada | — |
-| REQ-AUT-04 | Control de acceso por rol (rutas + RLS) | A | Parcial | RLS en `0003_rls.sql`; backend sin JWT | PR-004 | No ejecutada | — |
-| REQ-AUT-05 | Logout y expiración de sesión | M | Parcial | Logout en `auth-context.tsx`; sin expiración | PR-005 | No ejecutada | — |
+| REQ-AUT-04 | Control de acceso por rol (rutas + RLS) | A | Parcial | `requireUser`/`requireRole` en `backend/src/lib/auth.ts` (commit 96d5388); `RequireRole` en todas las páginas `/panel/*`; RLS en `0003`/`0005`. Faltan tests 401/403 por endpoint | PR-004 | No ejecutada | — |
+| REQ-AUT-05 | Logout y expiración de sesión | M | Parcial | Logout en `auth-context.tsx`; sin expiración por inactividad | PR-005 | OK logout (demo) | 02/11/2026 |
 | REQ-AUT-06 | Login con Google (OAuth) | M | Pendiente | — | PR-006 | No ejecutada | — |
 | REQ-PRO-01 | Editar perfil del proveedor | A | Pendiente | — | PR-007 | No ejecutada | — |
 | REQ-PRO-02 | Elegir servicios desde catálogo | A | Parcial | `provider_services` en DB; sin UI de edición | PR-008 | No ejecutada | — |
@@ -26,24 +28,24 @@
 | REQ-VER-03 | Insignia "Verificado", solo verificados en búsqueda | A | Implementado | `nearby_providers` filtra por verificado | PR-015 | No ejecutada | — |
 | REQ-BUS-01 | Ubicación del cliente | A | Implementado | Geolocalización en `SearchPage` | PR-016 | No ejecutada | — |
 | REQ-BUS-02 | Búsqueda por radio (PostGIS) | A | Implementado | `nearby_providers` con `ST_DWithin` | PR-017 | No ejecutada | — |
-| REQ-BUS-03 | Filtros, orden, paginación | A | Parcial | Filtro por segmento y servicio; sin paginación | PR-018 | No ejecutada | — |
+| REQ-BUS-03 | Filtros, orden, paginación | A | Parcial | Filtro por segmento/texto y orden distancia/rating en `SearchPage`; sin paginación ni filtro por rating/disponibilidad | PR-018 | OK filtro segmento (demo) | 02/11/2026 |
 | REQ-BUS-04 | Resultados en mapa | B | Implementado | `MapView` con marcadores y clustering | PR-019 | No ejecutada | — |
-| REQ-SOL-01 | Crear solicitud de servicio | A | Pendiente | — | PR-020 | No ejecutada | — |
-| REQ-SOL-02 | Distribución a proveedores elegibles | A | Pendiente | — | PR-021 | No ejecutada | — |
-| REQ-SOL-03 | Bandeja del proveedor | A | Pendiente | — | PR-022 | No ejecutada | — |
-| REQ-SOL-04 | Estados de solicitud con historial | A | Pendiente | — | PR-023 | No ejecutada | — |
-| REQ-SOL-05 | Cancelar solicitud e historial | M | Pendiente | — | PR-024 | No ejecutada | — |
-| REQ-COT-01 | Cotización con monto CLP | A | Pendiente | — | PR-025 | No ejecutada | — |
-| REQ-COT-02 | Comparar y aceptar cotizaciones | A | Pendiente | — | PR-026 | No ejecutada | — |
-| REQ-COT-03 | Marcar ejecución y completar | A | Pendiente | — | PR-027 | No ejecutada | — |
+| REQ-SOL-01 | Crear solicitud de servicio | A | Parcial | `request-form.tsx`, `POST /api/requests`, tabla `service_requests` (0005). Faltan tipo de servicio, geolocalización y fotos | PR-020 | OK (demo) | 02/11/2026 |
+| REQ-SOL-02 | Distribución a proveedores elegibles | A | Pendiente | No existe función de elegibilidad RN-03 ni notificación a elegibles | PR-021 | No ejecutada | — |
+| REQ-SOL-03 | Bandeja del proveedor | A | Parcial | `ProviderInboxPage.tsx` lista todas las solicitudes abiertas (sin elegibilidad ni filtros) | PR-022 | OK (demo, tras D-07) | 02/11/2026 |
+| REQ-SOL-04 | Estados de solicitud con historial | A | Parcial | RPC `transition_request` + `service_request_events` (0005); historial en `request-detail.tsx`. La validación por rol en modo demo no existe | PR-023 | OK (demo) | 02/11/2026 |
+| REQ-SOL-05 | Cancelar solicitud e historial | M | Parcial | Cancelar en `request-detail.tsx`; sin motivo ni filtro por estado | PR-024 | OK cancelar (demo) | 02/11/2026 |
+| REQ-COT-01 | Cotización con monto CLP | A | Parcial | `quote-form.tsx`, `quoteCreateSchema` (monto entero >0, alcance ≥20, validez 1–30), `unique(request_id, provider_id)`. Falta paso a `vencida` | PR-025 | OK (demo) | 02/11/2026 |
+| REQ-COT-02 | Comparar y aceptar cotizaciones | A | Parcial | RPC `accept_quote` rechaza el resto. Falta vista comparativa y revelar contacto (RN-10) | PR-026 | OK aceptar (demo) | 02/11/2026 |
+| REQ-COT-03 | Marcar ejecución y completar | A | Parcial | Proveedor marca En ejecución → Completada. Falta confirmación del cliente y auto-confirmación | PR-027 | OK (demo) | 02/11/2026 |
 | REQ-MSG-01 | Chat en tiempo real | M | Pendiente | — | PR-028 | No ejecutada | — |
 | REQ-MSG-02 | Adjuntos de imagen | B | Pendiente | — | PR-029 | No ejecutada | — |
-| REQ-NOT-01 | Campana con notificaciones | M | Pendiente | — | PR-030 | No ejecutada | — |
+| REQ-NOT-01 | Campana con notificaciones | M | Parcial | `notification-bell.tsx` + `/api/notifications` con polling 15–30 s; sin Realtime | PR-030 | OK (demo) | 02/11/2026 |
 | REQ-NOT-02 | Correos transaccionales | M | Pendiente | — | PR-031 | No ejecutada | — |
 | REQ-VAL-01 | Reseña 1–5 solo si Completada | A | Parcial | `reviews` en DB; sin restricción por estado | PR-032 | No ejecutada | — |
 | REQ-VAL-02 | Promedio y conteo automáticos | A | Implementado | Trigger `increment_provider_reviews` | PR-033 | No ejecutada | — |
 | REQ-VAL-03 | Respuesta del proveedor | B | Pendiente | — | PR-034 | No ejecutada | — |
-| REQ-IA-01 | Diagnóstico asistido con IA | A | Pendiente | Stub en `services/ai.ts` | PR-035 | No ejecutada | — |
+| REQ-IA-01 | Diagnóstico asistido con IA | A | Parcial | Chat con Gemini y fallback por reglas en `services/ai.ts`; sin diagnóstico estructurado ni prellenado | PR-035 | OK chat por reglas (demo) | 02/11/2026 |
 | REQ-IA-02 | Búsqueda semántica | M | Pendiente | `match_documents` RPC existe; sin endpoint | PR-036 | No ejecutada | — |
 | REQ-IA-03 | Asistente RAG | M | Pendiente | Stub | PR-037 | No ejecutada | — |
 | REQ-IA-04 | Rate limit IA y contingencia | A | Pendiente | — | PR-038 | No ejecutada | — |
@@ -57,7 +59,7 @@
 | ID | Resumen | Estado | Evidencia | Resultado |
 |---|---|---|---|---|
 | RNF-01 | Búsqueda ≤2 s p95 | Pendiente | — | No ejecutada |
-| RNF-04 | HTTPS, RLS, sin secretos en cliente, validación zod | Parcial | RLS ok, zod ok; backend sin JWT | No ejecutada |
+| RNF-04 | HTTPS, RLS, sin secretos en cliente, validación zod | Parcial | RLS ok, zod ok, JWT validado en backend; falta D-05 | No ejecutada |
 | RNF-05 | Consentimiento, privacidad, eliminación | Pendiente | — | No ejecutada |
 | RNF-06 | Responsiva desde 360 px | Parcial | Tailwind responsive; sin auditoría | No ejecutada |
 | RNF-07 | Lighthouse accesibilidad ≥90 | Pendiente | — | No ejecutada |
@@ -75,11 +77,17 @@
 
 ## 4. Defectos encontrados y corregidos
 
-| # | Descripción | Severidad | Estado | Fecha | Commit |
-|---|---|---|---|---|---|
-| 1 | Backend no valida JWT en ningún endpoint protegido | Crítica | En corrección | 01/11/2026 | — |
-| 2 | Modo demo activo silenciosamente sin variable de control | Alta | En corrección | 01/11/2026 | — |
-| 3 | Seed insuficiente (10 proveedores, sin usuarios de prueba en auth) | Media | En corrección | 01/11/2026 | — |
+| ID | Severidad | Descripción | Causa | Solución | Estado | Fecha | Commit |
+|---|---|---|---|---|---|---|---|
+| D-01 | Crítica | El backend no validaba JWT en endpoints protegidos | No existía middleware de auth | `requireUser`/`requireRole` en `backend/src/lib/auth.ts` | Corregido | 01/11/2026 | 96d5388 |
+| D-02 | Alta | El modo demo se activaba en silencio sin variable de control | Fallback implícito sin Supabase | `DEMO_MODE`/`VITE_DEMO_MODE` explícitos | Corregido | 01/11/2026 | 913841b |
+| D-03 | Media | Seed insuficiente (10 proveedores, sin usuarios en `auth.users`) | Seed inicial mínimo | Bloque A | Abierto | 01/11/2026 | — |
+| D-04 | Alta | `npm run dev` fallaba en Windows | `next dev -p ${PORT:-3001}` es sintaxis bash | Puerto fijo `-p 3001` | Corregido | 02/11/2026 | b6dbde8 |
+| D-05 | Crítica | Cualquiera puede registrarse como admin vía Supabase Auth (incumple RN-01) | `handle_new_user` acepta `role = admin` desde metadatos | Bloque B: restringir a cliente/proveedor | Abierto | 02/11/2026 | — |
+| D-06 | Alta | "NetworkError" al registrarse con el `.env` de ejemplo | Las claves `your-...` se tomaban como Supabase configurado | Valores `your-` cuentan como vacíos | Corregido | 02/11/2026 | 913841b |
+| D-07 | Alta | En modo demo el proveedor no veía solicitudes (bandeja vacía, 403 en detalle) | El filtro demo solo permitía al cliente dueño | Regla `demoCanSee` (abiertas + cotizadas) | Corregido | 02/11/2026 | de6ae21 |
+| D-08 | Media | `pnpm lint` fallaba en todos los equipos Windows | `core.autocrlf` genera CRLF y Prettier exigía LF | `endOfLine: auto` en `.prettierrc.json` | Corregido | 02/11/2026 | b6dbde8 |
+| D-09 | Baja | Desde el modal de proveedor no se llegaba al perfil `/proveedor/:id` | Faltaba enlace | Botón "Ver perfil completo" | Corregido | 02/11/2026 | 7dc1afb |
 
 ## 5. URL de producción y credenciales demo
 
