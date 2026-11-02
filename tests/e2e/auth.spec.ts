@@ -7,7 +7,7 @@ test.describe("Autenticacion", () => {
 
     await expect(page).toHaveURL(/\/panel\/solicitudes$/);
     await expect(page.getByRole("heading", { name: "Hola, Cliente" })).toBeVisible();
-    await expect(page.getByText("Mis solicitudes")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Nueva solicitud" })).toBeVisible();
   });
 
   test("login demo de proveedor redirige a su panel", async ({ page }) => {

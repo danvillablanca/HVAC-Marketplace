@@ -9,7 +9,7 @@ test.describe("Paneles", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: "Bandeja de verificacion" }),
     ).toBeVisible();
-    await expect(page.getByText("Termica Norte Ingenieria")).toBeVisible();
+    await expect(page.getByText("Térmica Norte Ingeniería")).toBeVisible();
     await expect(page.getByText("Calor Central SpA")).toBeVisible();
     await expect(page.getByRole("button", { name: "Aprobar" }).first()).toBeVisible();
   });
@@ -26,7 +26,7 @@ test.describe("Paneles", () => {
     await page.goto("/panel/proveedor");
 
     await expect(page.getByRole("heading", { name: "Hola, Proveedor" })).toBeVisible();
-    await expect(page.getByText("Solicitudes recientes", { exact: true })).toBeVisible();
+    await expect(page.getByText("Solicitudes disponibles", { exact: true })).toBeVisible();
     await expect(page.getByText("Estado de verificacion", { exact: true })).toBeVisible();
   });
 
