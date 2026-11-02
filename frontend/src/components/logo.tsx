@@ -6,7 +6,7 @@ export function Logo({ className, to = "/" }: { className?: string; to?: string 
     <Link
       to={to}
       className={cn("flex items-center gap-2.5", className)}
-      aria-label="Marketplace HVAC, inicio"
+      aria-label="HVAC Connect, inicio"
     >
       <span className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm">
         <svg
@@ -22,7 +22,7 @@ export function Logo({ className, to = "/" }: { className?: string; to?: string 
         </svg>
       </span>
       <span className="font-display text-lg font-bold tracking-tight">
-        Marketplace<span className="text-primary"> HVAC</span>
+        HVAC<span className="text-primary"> Connect</span>
       </span>
     </Link>
   );

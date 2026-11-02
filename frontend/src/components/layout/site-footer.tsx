@@ -59,7 +59,7 @@ export function SiteFooter() {
       <div className="border-t border-border">
         <div className="container-page flex flex-col items-center justify-between gap-2 py-6 text-xs text-muted-foreground sm:flex-row">
           <p>Proyecto academico IIC3113 - Grupo 1. Cliente: ASHRAE Chile.</p>
-          <p>Marketplace HVAC © {new Date().getFullYear()}</p>
+          <p>HVAC Connect © {new Date().getFullYear()}</p>
         </div>
       </div>
     </footer>

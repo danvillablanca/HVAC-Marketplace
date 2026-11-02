@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import type { ProviderDetail } from "@hvac/shared";
 
-const SITE_NAME = "Marketplace HVAC";
+const SITE_NAME = "HVAC Connect";
 
 /** Asigna el titulo del documento agregando el nombre del sitio. */
 export function setDocumentTitle(title: string): void {
