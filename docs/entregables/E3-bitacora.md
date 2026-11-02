@@ -64,3 +64,33 @@
 ### Lo que sigue
 - Bloque B (cuentas): corregir D-05 y D-10, consentimiento, bloqueo por intentos, recuperación de contraseña, expiración de sesión y OAuth.
 
+---
+
+## Bloque B — Sprint 1: cuentas (REQ-AUT)
+
+**Fecha:** 02/11/2026 · **Rama:** `feature/bloque-b`
+
+### Lo hecho
+- **AUT-01:** checkbox obligatorio de términos y privacidad; páginas `/terminos` y `/privacidad` (Ley 19.628); `accepted_terms_at` en `profiles`; solo cliente o proveedor en el registro, validado también en `handle_new_user` (RN-01).
+- **AUT-02:** `POST /api/auth/login` con mensaje genérico y bloqueo de 5 fallos en 15 minutos (`login_attempts`, regla compartida en `shared/utils/lockout.ts`, también en modo demo).
+- **AUT-03:** `/recuperar` y `/restablecer` con la misma política de contraseña (8+ caracteres, letra y número).
+- **AUT-04:** `RequireRole` en todas las rutas `/panel/*`, tests 401/403 por endpoint y rol leído desde `profiles`.
+- **AUT-05:** logout que revoca la sesión; expiración por 7 días sin actividad (`config.toml` + chequeo en el cliente).
+- **AUT-06:** botón de Google detrás de `VITE_GOOGLE_AUTH_ENABLED`, elección de rol en `/elegir-rol` con la RPC `choose_role`; pasos en `despliegue.md`.
+- Verificación contra Supabase local (`DEMO_MODE=false`): 11/11 pasos OK, incluido el correo de recuperación real (Mailpit). 10 pruebas pgTAP nuevas.
+
+### Problemas encontrados
+- **D-14 (crítico):** la política `profiles_update_own` dejaba a cualquier usuario cambiar su propio `role` a admin por REST.
+- **D-15/D-16:** el CI llevaba tiempo en rojo (Node 20 con jsdom; E2E sin modo demo ni puerto correcto).
+- **D-17:** crear solicitudes y aceptar cotizaciones no exigía rol.
+
+### Cómo se resolvieron
+- D-14: permisos por columna (`grant update (full_name, phone)`) y rol leído siempre desde `profiles`.
+- D-15/D-16: Node 22 en CI; Playwright con puertos por línea de comandos y modo demo explícito. CI verde en las ramas del Paso 0 y del Bloque A.
+- D-17: `requireRole(["cliente"])` en ambas rutas.
+
+### Lo que sigue
+- Probar Google OAuth con credenciales reales cuando el equipo las cree.
+- Plantillas de correo en español (NOT-02, Bloque F).
+- Bloque C: perfil y verificación del proveedor; corregir D-12.
+

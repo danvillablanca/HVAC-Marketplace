@@ -11,12 +11,12 @@
 
 | ID | Resumen | Prio | Estado | Evidencia | Caso PR | Resultado | Fecha |
 |---|---|---|---|---|---|---|---|
-| REQ-AUT-01 | Registro con nombre, email, contraseña y rol | A | Parcial | `auth-form.tsx` + `auth-context.tsx` (Supabase `signUp` y demo). Falta consentimiento y `handle_new_user` acepta rol admin (D-05) | PR-001 | OK (demo, E2E manual) | 02/11/2026 |
-| REQ-AUT-02 | Login email/contraseña | A | Parcial | `signInWithPassword` + demo; mensaje de error genérico. Falta bloqueo por intentos | PR-002 | OK (demo, E2E manual) | 02/11/2026 |
-| REQ-AUT-03 | Recuperación de contraseña | M | Pendiente | — | PR-003 | No ejecutada | — |
-| REQ-AUT-04 | Control de acceso por rol (rutas + RLS) | A | Parcial | `requireUser`/`requireRole` en `backend/src/lib/auth.ts` (commit 96d5388); `RequireRole` en todas las páginas `/panel/*`; RLS en `0003`/`0005`. Faltan tests 401/403 por endpoint | PR-004 | No ejecutada | — |
-| REQ-AUT-05 | Logout y expiración de sesión | M | Parcial | Logout en `auth-context.tsx`; sin expiración por inactividad | PR-005 | OK logout (demo) | 02/11/2026 |
-| REQ-AUT-06 | Login con Google (OAuth) | M | Pendiente | — | PR-006 | No ejecutada | — |
+| REQ-AUT-01 | Registro con nombre, email, contraseña y rol | A | Implementado | `auth-form.tsx` (checkbox de términos, solo cliente/proveedor), `/terminos`, `/privacidad`, `accepted_terms_at` y `handle_new_user` con RN-01 (`0007`) | PR-001 | OK (Supabase local) | 02/11/2026 |
+| REQ-AUT-02 | Login email/contraseña | A | Implementado | `POST /api/auth/login` con mensaje genérico y bloqueo de 5 fallos en 15 min (`login_attempts`, `shared/utils/lockout.ts`) | PR-002 | OK (Supabase local) | 02/11/2026 |
+| REQ-AUT-03 | Recuperación de contraseña | M | Implementado | `/recuperar` (`resetPasswordForEmail`) y `/restablecer` con `passwordResetSchema`. Correo en inglés hasta NOT-02 | PR-003 | OK (Supabase local + Mailpit) | 02/11/2026 |
+| REQ-AUT-04 | Control de acceso por rol (rutas + RLS) | A | Implementado | `RequireRole` en todas las rutas `/panel/*` (`panel-routes.test.tsx`), 401/403 por endpoint (`access-control.test.ts`), rol leído desde `profiles`, rol inmutable para el usuario (D-14) | PR-004 | OK | 02/11/2026 |
+| REQ-AUT-05 | Logout y expiración de sesión | M | Implementado | `signOut` revoca la sesión en Supabase; `[auth.sessions] inactivity_timeout = 168h` y chequeo de última actividad en `auth-context.tsx` | PR-005 | OK (Supabase local) | 02/11/2026 |
+| REQ-AUT-06 | Login con Google (OAuth) | M | Implementado (sin credenciales) | Botón tras `VITE_GOOGLE_AUTH_ENABLED`, `/elegir-rol` + RPC `choose_role`; pasos en `despliegue.md`. Falta probar con credenciales reales de Google | PR-006 | OK con mocks; flujo real no ejecutado | 02/11/2026 |
 | REQ-PRO-01 | Editar perfil del proveedor | A | Pendiente | — | PR-007 | No ejecutada | — |
 | REQ-PRO-02 | Elegir servicios desde catálogo | A | Parcial | `provider_services` en DB; sin UI de edición | PR-008 | No ejecutada | — |
 | REQ-PRO-03 | Ubicación base y radio de cobertura | A | Parcial | `locations` con PostGIS; sin radio en modelo | PR-009 | No ejecutada | — |
@@ -83,15 +83,19 @@
 | D-02 | Alta | El modo demo se activaba en silencio sin variable de control | Fallback implícito sin Supabase | `DEMO_MODE`/`VITE_DEMO_MODE` explícitos | Corregido | 01/11/2026 | 913841b |
 | D-03 | Media | Seed insuficiente (10 proveedores, sin usuarios en `auth.users`) | Seed inicial mínimo | Seed con 36 proveedores, comunas, solicitudes en 6 estados y 5 usuarios demo; pruebas pgTAP | Corregido | 02/11/2026 | Bloque A |
 | D-04 | Alta | `npm run dev` fallaba en Windows | `next dev -p ${PORT:-3001}` es sintaxis bash | Puerto fijo `-p 3001` | Corregido | 02/11/2026 | b6dbde8 |
-| D-05 | Crítica | Cualquiera puede registrarse como admin vía Supabase Auth (incumple RN-01) | `handle_new_user` acepta `role = admin` desde metadatos | Bloque B: restringir a cliente/proveedor | Abierto | 02/11/2026 | — |
+| D-05 | Crítica | Cualquiera puede registrarse como admin vía Supabase Auth (incumple RN-01) | `handle_new_user` acepta `role = admin` desde metadatos | `handle_new_user` solo acepta cliente/proveedor; `registerSchema` sin admin | Corregido | 02/11/2026 | Bloque B (0007) |
 | D-06 | Alta | "NetworkError" al registrarse con el `.env` de ejemplo | Las claves `your-...` se tomaban como Supabase configurado | Valores `your-` cuentan como vacíos | Corregido | 02/11/2026 | 913841b |
 | D-07 | Alta | En modo demo el proveedor no veía solicitudes (bandeja vacía, 403 en detalle) | El filtro demo solo permitía al cliente dueño | Regla `demoCanSee` (abiertas + cotizadas) | Corregido | 02/11/2026 | de6ae21 |
 | D-08 | Media | `pnpm lint` fallaba en todos los equipos Windows | `core.autocrlf` genera CRLF y Prettier exigía LF | `endOfLine: auto` en `.prettierrc.json` | Corregido | 02/11/2026 | b6dbde8 |
 | D-09 | Baja | Desde el modal de proveedor no se llegaba al perfil `/proveedor/:id` | Faltaba enlace | Botón "Ver perfil completo" | Corregido | 02/11/2026 | 7dc1afb |
-| D-10 | Media | El nombre del usuario no se guarda en `profiles` al registrarse | El frontend envía `fullName` y `handle_new_user` lee `full_name` | Bloque B | Abierto | 02/11/2026 | — |
+| D-10 | Media | El nombre del usuario no se guarda en `profiles` al registrarse | El frontend envía `fullName` y `handle_new_user` lee `full_name` | `handle_new_user` lee `fullName`, `full_name` o `name` | Corregido | 02/11/2026 | Bloque B (0007) |
 | D-11 | Crítica | Cualquier usuario autenticado puede cambiar el estado de solicitudes ajenas | `transition_request` es `security definer` y no valida actor ni rol | Bloque E: validar actor por transición | Abierto | 02/11/2026 | — |
 | D-12 | Alta | La búsqueda muestra proveedores no verificados marcados `is_demo` (incumple VER-03) | `nearby_providers` filtra `verificado or is_demo` | Bloque C | Abierto | 02/11/2026 | — |
 | D-13 | Media | `supabase start` falla con Supabase CLI v3 | `[inbucket]` ya no existe en `config.toml` | Renombrado a `[local_smtp]` | Corregido | 02/11/2026 | Bloque A |
+| D-14 | Crítica | Un usuario podía hacerse admin editando su propio perfil por la API REST | La política `profiles_update_own` permitía actualizar cualquier columna, incluido `role` | `revoke update` + `grant update (full_name, phone)`; el frontend lee el rol de `profiles` y no de metadatos | Corregido | 02/11/2026 | Bloque B (0007) |
+| D-15 | Alta | Los tests del frontend fallaban en CI | CI usaba Node 20 y la versión actual de jsdom requiere Node 22 | CI y `engines` en Node 22 LTS | Corregido | 02/11/2026 | 26e67e8 |
+| D-16 | Alta | Los E2E fallaban en CI | Playwright pasaba el puerto por `PORT` (ignorado tras D-04) y no activaba el modo demo tras D-02 | Puertos por línea de comandos, `DEMO_MODE`/`VITE_DEMO_MODE` y `FRONTEND_ORIGIN` explícitos; textos de tests al día | Corregido | 02/11/2026 | 5f2aa94, a18fc46 |
+| D-17 | Media | Crear solicitudes y aceptar cotizaciones solo exigía sesión, no rol | Rutas con `requireUser` | `requireRole(["cliente"])` en `POST /api/requests` y `PATCH /api/quotes/:id` | Corregido | 02/11/2026 | Bloque B |
 
 ## 5. URL de producción y credenciales demo
 

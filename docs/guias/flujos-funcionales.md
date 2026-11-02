@@ -41,8 +41,11 @@ Guía paso a paso de todos los flujos que puedes verificar en **HVAC Connect** c
 | ---- | ------ | ------------------ |
 | 1 | Ir a `/registro` | Formulario con campos: nombre, email, contraseña, rol (cliente o proveedor). |
 | 2 | Seleccionar rol "Proveedor" | Aparece campo adicional de RUT (formato `XX.XXX.XXX-X`). |
-| 3 | Completar y enviar el formulario | Registro exitoso, redirige al panel correspondiente al rol. |
-| 4 | Intentar registrar con email ya existente | Muestra error. |
+| 3 | Enviar sin marcar "Acepto los Términos y la Política de privacidad" | Muestra "Debes aceptar los terminos y la politica de privacidad". |
+| 4 | Marcar el checkbox, completar (contraseña con 8+ caracteres, letras y números) y enviar | Registro exitoso, redirige al panel correspondiente al rol. |
+| 5 | Intentar registrar con email ya existente | Muestra error. |
+
+> El selector de rol solo ofrece cliente y proveedor: el admin no se auto-registra (RN-01).
 
 ---
 
@@ -57,7 +60,10 @@ Guía paso a paso de todos los flujos que puedes verificar en **HVAC Connect** c
 | 3 | Click en "Salir" en el header | Cierra sesión, vuelve a mostrar "Ingresar" y "Crear cuenta". |
 | 4 | Ingresar con `proveedor@demo.cl` / `demo1234` | Redirige a `/panel/proveedor`. |
 | 5 | Ingresar con `admin@demo.cl` / `demo1234` | Redirige a `/panel/admin/verificaciones`. |
-| 6 | Intentar login con credenciales inválidas | Muestra error, no ingresa. |
+| 6 | Intentar login con credenciales inválidas | Muestra "Correo o contraseña incorrectos", no ingresa. |
+| 7 | Fallar 5 veces con el mismo correo | El 6° intento (aunque la clave sea correcta) muestra "Demasiados intentos fallidos. Intenta de nuevo en N minutos". |
+| 8 | Click en "¿Olvidaste tu contraseña?" e ingresar el correo | Mensaje de confirmación. Con Supabase local el correo llega a Mailpit (`http://127.0.0.1:54324`) y el enlace abre `/restablecer`. En modo demo indica que no está disponible. |
+| 9 | Dejar la sesión 7 días sin actividad | Al volver, la sesión está cerrada. |
 
 ---
 
