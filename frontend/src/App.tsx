@@ -9,6 +9,11 @@ import ForProvidersPage from "@/pages/ForProvidersPage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import NotFoundPage from "@/pages/NotFoundPage";
+import RecoverPasswordPage from "@/pages/RecoverPasswordPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
+import ChooseRolePage from "@/pages/ChooseRolePage";
+import TermsPage from "@/pages/legal/TermsPage";
+import PrivacyPage from "@/pages/legal/PrivacyPage";
 import ProviderPanelPage from "@/pages/panel/ProviderPanelPage";
 import ProviderVerificationPage from "@/pages/panel/ProviderVerificationPage";
 import AdminVerificationPage from "@/pages/panel/AdminVerificationPage";
@@ -31,6 +36,11 @@ export function App() {
         <Route path="/para-proveedores" element={<ForProvidersPage />} />
         <Route path="/ingresar" element={<LoginPage />} />
         <Route path="/registro" element={<RegisterPage />} />
+        <Route path="/recuperar" element={<RecoverPasswordPage />} />
+        <Route path="/restablecer" element={<ResetPasswordPage />} />
+        <Route path="/elegir-rol" element={<ChooseRolePage />} />
+        <Route path="/terminos" element={<TermsPage />} />
+        <Route path="/privacidad" element={<PrivacyPage />} />
 
         {/* Panel - Cliente */}
         <Route path="/panel/solicitudes" element={<ClientRequestsPage />} />
