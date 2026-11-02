@@ -28,7 +28,10 @@ describe("auth-login", () => {
       refreshToken: "r",
       expiresAt: 1,
     });
-    expect(signInWithPassword).toHaveBeenCalledWith({ email: "cliente@demo.cl", password: "demo1234" });
+    expect(signInWithPassword).toHaveBeenCalledWith({
+      email: "cliente@demo.cl",
+      password: "demo1234",
+    });
   });
 
   it("PR-002 usa un mensaje genérico ante credenciales inválidas", async () => {
@@ -59,8 +62,12 @@ describe("auth-login", () => {
     const fail = (msAgo: number) => ({ success: false, createdAt: now - msAgo });
     const fiveFails = [1, 2, 3, 4, 5].map((m) => fail(m * 60000));
     expect(lockoutMinutesLeft(fiveFails, now)).toBe(10);
-    expect(lockoutMinutesLeft([...fiveFails.slice(0, 4), { success: true, createdAt: now - 1000 }], now)).toBe(0);
+    expect(
+      lockoutMinutesLeft([...fiveFails.slice(0, 4), { success: true, createdAt: now - 1000 }], now),
+    ).toBe(0);
     expect(lockoutMinutesLeft(fiveFails.slice(0, 4), now)).toBe(0);
-    expect(lockoutMinutesLeft([fail(LOCKOUT_WINDOW_MS - 30000), ...fiveFails.slice(0, 4)], now)).toBe(1);
+    expect(
+      lockoutMinutesLeft([fail(LOCKOUT_WINDOW_MS - 30000), ...fiveFails.slice(0, 4)], now),
+    ).toBe(1);
   });
 });

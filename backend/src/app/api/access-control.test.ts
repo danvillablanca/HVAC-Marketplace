@@ -42,13 +42,23 @@ const PROTECTED: Array<[string, string, Handler, Role[]]> = [
 describe("PR-004 control de acceso por rol en la API", () => {
   for (const [path, method, handler, forbidden] of PROTECTED) {
     it(`${method} ${path} responde 401 sin token`, async () => {
-      const res = await handler(jsonRequest(method, path.replace(":id", "x"), method === "GET" ? undefined : {}, { noAuth: true }), withId("x"));
+      const res = await handler(
+        jsonRequest(method, path.replace(":id", "x"), method === "GET" ? undefined : {}, {
+          noAuth: true,
+        }),
+        withId("x"),
+      );
       expect(res.status).toBe(401);
     });
 
     for (const role of forbidden) {
       it(`${method} ${path} responde 403 al rol ${role}`, async () => {
-        const res = await handler(jsonRequest(method, path.replace(":id", "x"), method === "GET" ? undefined : {}, { role }), withId("x"));
+        const res = await handler(
+          jsonRequest(method, path.replace(":id", "x"), method === "GET" ? undefined : {}, {
+            role,
+          }),
+          withId("x"),
+        );
         expect(res.status).toBe(403);
       });
     }
