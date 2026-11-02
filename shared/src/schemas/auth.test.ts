@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { registerSchema, loginSchema, rutSchema, phoneSchema } from "./auth";
+import {
+  registerSchema,
+  loginSchema,
+  rutSchema,
+  phoneSchema,
+  passwordSchema,
+  passwordResetSchema,
+} from "./auth";
 
 const validUuid = "00000000-0000-4000-8000-000000000000";
 
@@ -51,9 +58,10 @@ describe("schemas/auth", () => {
   describe("registerSchema", () => {
     const base = {
       email: "Usuario@Example.com",
-      password: "supersecreto",
+      password: "supersecreto1",
       fullName: "Juan Perez",
       role: "cliente" as const,
+      acceptTerms: true as const,
     };
 
     it("acepta un registro valido con RUT y telefono", () => {
@@ -95,10 +103,33 @@ describe("schemas/auth", () => {
       expect(registerSchema.safeParse({ ...base, role: "superadmin" }).success).toBe(false);
     });
 
-    it("acepta todos los roles permitidos", () => {
-      for (const role of ["cliente", "proveedor", "admin"] as const) {
+    it("acepta los roles de auto-registro", () => {
+      for (const role of ["cliente", "proveedor"] as const) {
         expect(registerSchema.safeParse({ ...base, role }).success).toBe(true);
       }
+    });
+
+    it("PR-001 RN-01: rechaza auto-registro como admin", () => {
+      expect(registerSchema.safeParse({ ...base, role: "admin" }).success).toBe(false);
+    });
+
+    it("PR-001 exige aceptar terminos y privacidad", () => {
+      expect(registerSchema.safeParse({ ...base, acceptTerms: false }).success).toBe(false);
+      const { acceptTerms: _omit, ...withoutTerms } = base;
+      expect(registerSchema.safeParse(withoutTerms).success).toBe(false);
+    });
+  });
+
+  describe("passwordSchema", () => {
+    it("exige letra y numero", () => {
+      expect(passwordSchema.safeParse("solamenteletras").success).toBe(false);
+      expect(passwordSchema.safeParse("12345678").success).toBe(false);
+      expect(passwordSchema.safeParse("demo1234").success).toBe(true);
+    });
+
+    it("PR-003 el restablecimiento exige confirmacion igual", () => {
+      expect(passwordResetSchema.safeParse({ password: "nueva1234", confirm: "nueva1234" }).success).toBe(true);
+      expect(passwordResetSchema.safeParse({ password: "nueva1234", confirm: "otra1234" }).success).toBe(false);
     });
   });
 
