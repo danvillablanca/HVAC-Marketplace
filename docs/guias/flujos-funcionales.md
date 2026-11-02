@@ -74,60 +74,61 @@ Guía paso a paso de todos los flujos que puedes verificar en **HVAC Connect** c
 
 | Paso | Acción | Resultado esperado |
 | ---- | ------ | ------------------ |
-| 1 | Ir a `/panel/solicitudes` | Lista de solicitudes del cliente (puede estar vacía inicialmente). |
+| 1 | Ir a `/panel/solicitudes` | Historial del cliente con filtro por estado. |
 | 2 | Click en "Nueva solicitud" | Navega a `/panel/solicitudes/nueva`. |
-| 3 | Completar el formulario: equipo, descripción, comuna, urgencia | Todos los campos son requeridos. |
-| 4 | Enviar la solicitud | Se crea la solicitud, redirige a la lista. La solicitud aparece con estado "abierta". |
-| 5 | Click en la solicitud recién creada | Navega a `/panel/solicitudes/:id` con el detalle completo. |
+| 3 | Elegir tipo de servicio (opcional), equipo, urgencia, descripción (20–1.000) y comuna, o "Usar mi ubicación" | Sin comuna o con descripción corta muestra el error del campo. |
+| 4 | "Publicar solicitud" | Vuelve a la lista con la solicitud "Abierta". Los proveedores elegibles (verificados, disponibles, con el servicio y con la comuna dentro de su radio) reciben la notificación "Nueva solicitud cerca de ti". |
+| 5 | Click en la solicitud | Detalle con historial. |
 
 ---
 
-## Flujo 5 — Proveedor: ver bandeja y enviar cotización
+## Flujo 5 — Proveedor: bandeja y cotización
 
-**Requisito:** estar logueado como `proveedor@demo.cl`.
+**Requisito:** estar logueado como `proveedor@demo.cl` (verificado).
 
 | Paso | Acción | Resultado esperado |
 | ---- | ------ | ------------------ |
-| 1 | Ir a `/panel/proveedor` | Dashboard con métricas: solicitudes abiertas, total solicitudes, notificaciones sin leer. |
-| 2 | Click en "Ver bandeja" o ir a `/panel/proveedor/bandeja` | Lista de solicitudes disponibles para cotizar. |
-| 3 | Click en una solicitud | Navega al detalle de la solicitud. |
-| 4 | Completar formulario de cotización: monto, IVA, alcance, plazo, vigencia | Campos con validación (monto > 0, plazo y vigencia son fechas futuras). |
-| 5 | Enviar cotización | Se crea la cotización, aparece en la lista de cotizaciones de esa solicitud. Se genera notificación para el cliente. |
+| 1 | Ir a `/panel/proveedor/bandeja` | Tres grupos: "Disponibles para cotizar", "Cotizadas" y "Mis trabajos", con filtros por urgencia y servicio. Cada tarjeta muestra comuna y distancia aproximada. |
+| 2 | Click en una solicitud disponible | Detalle sin dirección ni datos del cliente ("se muestran si acepta tu cotización") y formulario de cotización. |
+| 3 | Completar monto (> 0), IVA, alcance (≥ 20), plazo y vigencia (1–30 días) y enviar | "Cotización enviada". La solicitud pasa a "Con cotizaciones" y el cliente recibe la notificación. Una segunda cotización activa del mismo proveedor es rechazada (RN-04). |
+
+> Un proveedor no verificado, no disponible o fuera de cobertura no ve la solicitud y no puede cotizarla.
 
 ---
 
-## Flujo 6 — Cliente: aceptar o rechazar cotización
+## Flujo 6 — Cliente: comparar, aceptar o rechazar
 
-**Requisito:** estar logueado como `cliente@demo.cl`, tener una solicitud con cotización recibida.
+**Requisito:** solicitud con cotizaciones (en el seed, la de La Florida de `cliente@demo.cl` tiene dos).
 
 | Paso | Acción | Resultado esperado |
 | ---- | ------ | ------------------ |
-| 1 | Ir a `/panel/solicitudes/:id` de una solicitud con cotización | Se muestra la cotización con monto, alcance, plazo, vigencia. |
-| 2 | Click en "Aceptar" en la cotización | La cotización cambia a estado aceptada. La solicitud pasa a "adjudicada". Se genera notificación para el proveedor. |
-| 3 | Alternativa: rechazar la cotización | La cotización se marca como rechazada, la solicitud sigue abierta. |
+| 1 | Abrir la solicitud | Tabla comparativa: proveedor y calificación, monto (IVA), plazo, vigencia, distancia, estado; la más barata con "Menor precio". |
+| 2 | "Aceptar" en una cotización | La solicitud pasa a "Aceptada"; las demás quedan "Rechazada" (RN-05). El aceptado recibe "Tu cotización fue aceptada" y el resto "no fue seleccionada". El cliente ya ve el teléfono y correo del proveedor en su perfil (RN-10). |
+| 3 | Alternativa: "Rechazar" | Solo esa cotización queda rechazada; la solicitud sigue recibiendo otras. |
 
 ---
 
-## Flujo 7 — Proveedor: avanzar estados de solicitud
+## Flujo 7 — Proveedor: ejecutar y completar
 
-**Requisito:** estar logueado como `proveedor@demo.cl`, tener una solicitud adjudicada.
+**Requisito:** estar logueado como el proveedor adjudicado.
 
 | Paso | Acción | Resultado esperado |
 | ---- | ------ | ------------------ |
-| 1 | Ir al detalle de una solicitud adjudicada | Se muestran acciones de transición de estado. |
-| 2 | Marcar "En progreso" | Estado cambia a "en_progreso". Se notifica al cliente. |
-| 3 | Marcar "Completada" | Estado cambia a "completada". Se notifica al cliente. |
+| 1 | Bandeja → "Mis trabajos" → abrir el trabajo | Ahora se ve la dirección del cliente. |
+| 2 | "Marcar en ejecución" | Estado "En ejecución"; el cliente es notificado. |
+| 3 | "Marcar como completada" | Estado "Completada" y "Esperando la confirmación del cliente". |
+| 4 | Cliente: "Confirmar trabajo realizado" | "Trabajo confirmado" y enlace "Deja tu reseña". Si no confirma, se confirma solo a los 7 días. |
+
+> Otro proveedor, o el cliente, no pueden marcar estos estados (la RPC lo rechaza).
 
 ---
 
 ## Flujo 8 — Cliente: cancelar solicitud
 
-**Requisito:** estar logueado como `cliente@demo.cl`.
-
 | Paso | Acción | Resultado esperado |
 | ---- | ------ | ------------------ |
-| 1 | Ir al detalle de una solicitud abierta | Se muestra botón de cancelar. |
-| 2 | Click en "Cancelar solicitud" | La solicitud pasa a estado "cancelada". Ya no acepta cotizaciones. |
+| 1 | Abrir una solicitud "Abierta" o "Con cotizaciones" → "Cancelar solicitud" | Pide un motivo opcional. |
+| 2 | "Confirmar cancelación" | Estado "Cancelada", motivo en el historial, cotizaciones vigentes rechazadas y aviso a los proveedores que cotizaron. Ya no acepta cotizaciones. |
 
 ---
 

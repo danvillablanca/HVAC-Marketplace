@@ -125,3 +125,31 @@
 ### Lo que sigue
 - Bloque D (búsqueda): selector región → comuna, radio por defecto 10 km, filtros por calificación y disponibilidad, paginación en la UI.
 
+---
+
+## Bloque E — Sprint 2: solicitudes y cotizaciones (REQ-SOL, REQ-COT)
+
+**Fecha:** 02/11/2026 · **Rama:** `feature/bloque-e` (adelantado antes del Bloque D porque D-19 impedía cotizar con Supabase real)
+
+### Lo hecho
+- Migración `0009`: elegibilidad RN-03, ubicación por comuna, bandeja limitada del proveedor, RPC transaccionales con actor (`create_quote`, `accept_quote`, `reject_quote`, `transition_request`, `confirm_completion`), vencimiento de cotizaciones, índice único parcial (RN-04) y RLS sin cambios directos de estado.
+- Backend: servicio de solicitudes reescrito con las mismas reglas en Supabase y en modo demo; notificaciones a elegibles, al cliente y a todos los proveedores involucrados.
+- Frontend: formulario con servicio y ubicación, tabla comparativa de cotizaciones, aceptar/rechazar, cancelar con motivo, confirmar trabajo, bandeja en tres grupos con filtros y filtro por estado en el historial del cliente.
+- Verificación: 12/12 pasos del ciclo completo contra Supabase local; 18 pruebas pgTAP de reglas y RLS; 12 pruebas unitarias del flujo; 1 E2E del ciclo en modo demo.
+
+### Problemas encontrados
+- **D-22/D-23 (críticos):** las RPC no validaban al actor desde el backend y la RLS permitía cambiar estados por REST.
+- **D-24:** recursión infinita entre políticas RLS (la detectó pgTAP).
+- **D-25:** el proveedor adjudicado no veía la dirección (lo detectó el E2E real).
+- **D-26:** incoherencia del seed con RN-03.
+
+### Cómo se resolvieron
+- RPC con actor explícito solo para `service_role`; RLS de solo lectura; función `is_awarded_provider`; fila completa al adjudicado; seed corregido.
+
+### Diferido
+- **Fotos de la solicitud (SOL-01, bucket `request-photos`):** mismo criterio que PRO-04 (Storage fuera del alcance acordado por ahora).
+- Auto-confirmación con `pg_cron`: se evalúa de forma perezosa al leer (decisión documentada; funciona igual en local y en el plan gratuito).
+
+### Lo que sigue
+- Bloque D (búsqueda): selector región → comuna, radio por defecto 10 km, filtros por calificación y disponibilidad, paginación en la UI.
+

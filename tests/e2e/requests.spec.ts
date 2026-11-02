@@ -1,0 +1,60 @@
+import { expect, test } from "@playwright/test";
+import { loginAsDemo } from "./helpers";
+
+// Ciclo completo de una solicitud en modo demo (REQ-SOL-01..05, REQ-COT-01..03).
+// El backend demo guarda el estado en memoria, por eso el test corre en serie.
+test.describe.configure({ mode: "serial" });
+
+test("PR-020..PR-027 solicitud, cotizacion, aceptacion, ejecucion y confirmacion", async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, "El ciclo se valida una vez en escritorio");
+  const ref = `ref-${Date.now()}`;
+
+  await loginAsDemo(page, "cliente");
+  await page.goto("/panel/solicitudes/nueva");
+  await page
+    .getByLabel("Tipo de servicio")
+    .selectOption({ label: "Venta e instalacion de equipos Split" });
+  await page
+    .getByLabel("Descripción del problema o servicio")
+    .fill(`Instalar split en dormitorio ${ref}`);
+  await page.getByLabel("Comuna").selectOption("Ñuñoa");
+  await page.getByRole("button", { name: "Publicar solicitud" }).click();
+  await expect(page).toHaveURL(/\/panel\/solicitudes$/);
+
+  await loginAsDemo(page, "proveedor");
+  await page.goto("/panel/proveedor/bandeja");
+  await page.getByText(ref).first().click();
+  await expect(page.getByText(/La dirección y los datos del cliente/)).toBeVisible();
+  await page.getByLabel("Monto (CLP)").fill("90000");
+  await page
+    .getByLabel("Alcance del trabajo")
+    .fill("Instalación completa con materiales y garantía de 6 meses.");
+  await page.getByLabel("Plazo de ejecución (días)").fill("3");
+  await page.getByLabel("Validez de la cotización (días)").fill("10");
+  await page.locator('form button[type="submit"]').click();
+  await expect(page.getByText("Cotización enviada")).toBeVisible();
+
+  await loginAsDemo(page, "cliente");
+  await page.goto("/panel/solicitudes");
+  await page.getByText(ref).first().click();
+  await expect(page.getByRole("table")).toContainText("$90.000");
+  await page.getByRole("button", { name: "Aceptar" }).click();
+  await expect(page.getByText("Aceptada").first()).toBeVisible();
+  const detailUrl = page.url();
+
+  await loginAsDemo(page, "proveedor");
+  await page.goto("/panel/proveedor/bandeja");
+  await expect(page.locator("section.space-y-3", { hasText: "Mis trabajos" })).toContainText(ref);
+  await page.goto(detailUrl);
+  await page.getByRole("button", { name: "Marcar en ejecución" }).click();
+  await page.getByRole("button", { name: "Marcar como completada" }).click();
+  await expect(page.getByText("Esperando la confirmación del cliente.")).toBeVisible();
+
+  await loginAsDemo(page, "cliente");
+  await page.goto(detailUrl);
+  await page.getByRole("button", { name: "Confirmar trabajo realizado" }).click();
+  await expect(page.getByText(/Trabajo confirmado/)).toBeVisible();
+});
