@@ -5,7 +5,7 @@
   "description": "Marketplace HVAC - plataforma para encontrar y contratar proveedores HVAC verificados en Chile (proyecto IIC3113, Grupo 1 / ASHRAE Chile)",
   "packageManager": "pnpm@12.4.2",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "turbo run dev",
