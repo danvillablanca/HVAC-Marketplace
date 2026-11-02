@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Select } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import type { ServiceRequest, RequestStatus } from "@hvac/shared";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,7 +42,10 @@ interface RequestListProps {
 }
 
 export function RequestList({ showLink = true }: RequestListProps) {
-  const { data: requests, isLoading, error } = useServiceRequests();
+  const { data: allRequests, isLoading, error } = useServiceRequests();
+  const [statusFilter, setStatusFilter] = useState("todas");
+  const requests =
+    statusFilter === "todas" ? allRequests : allRequests?.filter((r) => r.status === statusFilter);
 
   if (isLoading) {
     return (
@@ -61,7 +67,7 @@ export function RequestList({ showLink = true }: RequestListProps) {
     );
   }
 
-  if (!requests || requests.length === 0) {
+  if (!allRequests || allRequests.length === 0) {
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground">
@@ -73,7 +79,31 @@ export function RequestList({ showLink = true }: RequestListProps) {
 
   return (
     <div className="space-y-3">
-      {requests.map((req) => (
+      {/* SOL-05: historial con filtro por estado */}
+      <div className="flex items-center gap-2">
+        <Label htmlFor="status-filter" className="text-sm">
+          Estado
+        </Label>
+        <Select
+          id="status-filter"
+          className="w-56"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="todas">Todas ({allRequests.length})</option>
+          {Object.entries(STATUS_CONFIG).map(([value, config]) => (
+            <option key={value} value={value}>
+              {config.label} ({allRequests.filter((r) => r.status === value).length})
+            </option>
+          ))}
+        </Select>
+      </div>
+      {requests?.length === 0 && (
+        <p className="py-6 text-center text-sm text-muted-foreground">
+          No hay solicitudes con ese estado.
+        </p>
+      )}
+      {requests?.map((req) => (
         <RequestCard key={req.id} request={req} showLink={showLink} />
       ))}
     </div>
@@ -88,7 +118,7 @@ function RequestCard({ request, showLink }: { request: ServiceRequest; showLink:
         <div className="flex items-start justify-between gap-2">
           <div className="space-y-1">
             <CardTitle className="text-base">
-              {EQUIPMENT_LABELS[request.equipment] ?? request.equipment}
+              {request.serviceName ?? EQUIPMENT_LABELS[request.equipment] ?? request.equipment}
               {request.commune && (
                 <span className="font-normal text-muted-foreground"> — {request.commune}</span>
               )}

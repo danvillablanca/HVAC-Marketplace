@@ -50,12 +50,27 @@ export function useCreateQuote() {
   });
 }
 
-/** Aceptar una cotización (solo cliente). */
-export function useAcceptQuote() {
+/** COT-02: el cliente acepta o rechaza una cotizacion. */
+export function useDecideQuote() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (quoteId: string) =>
-      apiFetch<{ accepted: boolean }>(`/api/quotes/${quoteId}`, { method: "PATCH" }),
+    mutationFn: ({ quoteId, action }: { quoteId: string; action: "aceptar" | "rechazar" }) =>
+      apiFetch<{ requestId: string; status: string }>(`/api/quotes/${quoteId}`, {
+        method: "PATCH",
+        body: { action },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["service-requests"] });
+    },
+  });
+}
+
+/** COT-03: el cliente confirma el trabajo completado. */
+export function useConfirmCompletion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<ServiceRequest>(`/api/requests/${id}/confirm`, { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["service-requests"] });
     },
