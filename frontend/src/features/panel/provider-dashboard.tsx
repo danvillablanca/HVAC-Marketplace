@@ -1,18 +1,67 @@
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { BadgeCheck, FileText, Inbox, Pencil, ShieldCheck, Star } from "lucide-react";
+import {
+  AlertCircle,
+  BadgeCheck,
+  Clock,
+  FileText,
+  Inbox,
+  Pencil,
+  ShieldCheck,
+  Star,
+  XCircle,
+} from "lucide-react";
+import type { ProviderVerificationStatus } from "@hvac/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/features/auth";
 import { useServiceRequests } from "@/features/requests/hooks";
 import { useUnreadCount } from "@/features/notifications/hooks";
+import { useMyProviderProfile } from "./provider-hooks";
+
+const STATUS_BADGE: Record<
+  ProviderVerificationStatus,
+  {
+    label: string;
+    variant: "success" | "warning" | "destructive" | "secondary";
+    icon: typeof BadgeCheck;
+    hint: string;
+  }
+> = {
+  verificado: {
+    label: "Verificado",
+    variant: "success",
+    icon: BadgeCheck,
+    hint: "Apareces en las búsquedas y puedes cotizar.",
+  },
+  en_revision: {
+    label: "En revisión",
+    variant: "warning",
+    icon: Clock,
+    hint: "El equipo ASHRAE está revisando tus antecedentes.",
+  },
+  pendiente: {
+    label: "Sin verificar",
+    variant: "secondary",
+    icon: AlertCircle,
+    hint: "Envía tus antecedentes para aparecer en las búsquedas.",
+  },
+  rechazado: {
+    label: "Rechazado",
+    variant: "destructive",
+    icon: XCircle,
+    hint: "Revisa el motivo, corrige tu perfil y vuelve a enviarlo.",
+  },
+};
 
 export function ProviderDashboard() {
   const { user } = useAuth();
   const firstName = user?.fullName?.split(" ")[0] ?? "proveedor";
   const { data: requests } = useServiceRequests();
   const { data: unread = 0 } = useUnreadCount();
+  const { data: profile, isLoading: profileLoading } = useMyProviderProfile();
+  const status = STATUS_BADGE[profile?.verificationStatus ?? "pendiente"];
 
   const openRequests =
     requests?.filter((r) => ["abierta", "con_cotizaciones"].includes(r.status)) ?? [];
@@ -50,9 +99,9 @@ export function ProviderDashboard() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline">
-            <Link to="/para-proveedores">
+            <Link to="/panel/proveedor/perfil">
               <Pencil className="size-4" />
-              Editar perfil
+              {profile ? "Editar perfil" : "Completar perfil"}
             </Link>
           </Button>
           <Button asChild>
@@ -63,6 +112,23 @@ export function ProviderDashboard() {
           </Button>
         </div>
       </header>
+
+      {!profileLoading && !profile && (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardContent className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-semibold">Completa el perfil de tu empresa</p>
+              <p className="text-sm text-muted-foreground">
+                Agrega tus servicios, comuna y radio de cobertura para poder verificarte y recibir
+                solicitudes.
+              </p>
+            </div>
+            <Button asChild>
+              <Link to="/panel/proveedor/perfil">Completar perfil</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         {metrics.map((metric, index) => (
@@ -148,15 +214,24 @@ export function ProviderDashboard() {
               <ShieldCheck className="size-5 text-primary" />
               Estado de verificacion
             </CardTitle>
-            <CardDescription>Tu estado de verificación ASHRAE.</CardDescription>
+            <CardDescription>{status.hint}</CardDescription>
           </CardHeader>
-          <CardContent className="flex items-center justify-between gap-4">
-            <Badge variant="success">
-              <BadgeCheck className="size-3" /> Verificado
-            </Badge>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/panel/proveedor/verificacion">Revisar antecedentes</Link>
-            </Button>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <Badge variant={status.variant}>
+                <status.icon className="size-3" /> {status.label}
+              </Badge>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/panel/proveedor/verificacion">
+                  {profile?.verificationStatus === "verificado"
+                    ? "Ver antecedentes"
+                    : "Verificarme"}
+                </Link>
+              </Button>
+            </div>
+            {profile?.verificationStatus === "rechazado" && profile.verificationNote && (
+              <p className="text-sm text-destructive">Motivo: {profile.verificationNote}</p>
+            )}
           </CardContent>
         </Card>
 

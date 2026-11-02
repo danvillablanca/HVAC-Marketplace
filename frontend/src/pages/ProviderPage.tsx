@@ -210,6 +210,12 @@ export default function ProviderPage() {
                 <CalendarClock className="size-4" />
                 Agendar / Contactar
               </Button>
+              {provider.contactHidden && (
+                <p className="text-sm text-muted-foreground">
+                  El teléfono y el correo se muestran cuando aceptas una cotización de este
+                  proveedor.
+                </p>
+              )}
               {provider.phone && (
                 <>
                   <Button asChild variant="outline">

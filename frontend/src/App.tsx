@@ -21,6 +21,7 @@ import ClientRequestsPage from "@/pages/panel/ClientRequestsPage";
 import NewRequestPage from "@/pages/panel/NewRequestPage";
 import RequestDetailPage from "@/pages/panel/RequestDetailPage";
 import ProviderInboxPage from "@/pages/panel/ProviderInboxPage";
+import ProviderProfilePage from "@/pages/panel/ProviderProfilePage";
 import AccountPage from "@/pages/panel/AccountPage";
 
 export function App() {
@@ -51,6 +52,7 @@ export function App() {
         <Route path="/panel/proveedor" element={<ProviderPanelPage />} />
         <Route path="/panel/proveedor/verificacion" element={<ProviderVerificationPage />} />
         <Route path="/panel/proveedor/bandeja" element={<ProviderInboxPage />} />
+        <Route path="/panel/proveedor/perfil" element={<ProviderProfilePage />} />
 
         {/* Panel - Cuenta */}
         <Route path="/panel/cuenta" element={<AccountPage />} />
