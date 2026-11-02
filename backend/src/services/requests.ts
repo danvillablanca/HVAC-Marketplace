@@ -475,3 +475,13 @@ export async function listProviderQuotes(providerId: string): Promise<Quote[]> {
     providerName: row.providers?.legal_name ?? null,
   }));
 }
+
+/** RN-10 (demo): el cliente tiene una cotizacion aceptada del proveedor (por id de usuario proveedor). */
+export function demoHasAcceptedQuote(clientId: string, providerUserId: string): boolean {
+  for (const r of demoRequests.values()) {
+    if (r.clientId !== clientId) continue;
+    if (r.quotes.some((q) => q.providerId === providerUserId && q.status === "aceptada"))
+      return true;
+  }
+  return false;
+}

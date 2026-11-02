@@ -14,6 +14,9 @@ import {
   searchDemoProviders,
 } from "../data/demo";
 import { mapProviderRow, mapProviderSummaryRow, mapReviewRow } from "./mappers";
+import type { AuthenticatedUser } from "../lib/auth";
+import { findDemoProfileByProviderId } from "./provider-profile";
+import { demoHasAcceptedQuote } from "./requests";
 
 export interface ListProvidersInput {
   segment?: ServiceSegment;
@@ -78,13 +81,16 @@ export async function listProviders(input: ListProvidersInput): Promise<ListProv
   };
 }
 
+const DETAIL_SELECT =
+  "*, provider_services(service_id, price_from, unit, services(name)), locations(commune, address, lat, lng, is_primary)";
+
 export async function getProvider(id: string): Promise<ProviderDetail | null> {
   const supabase = getServiceClient();
   if (!supabase) return getDemoProvider(id) ?? null;
 
   const bySlug = await supabase
     .from("providers")
-    .select("*, provider_services(*)")
+    .select(DETAIL_SELECT)
     .eq("slug", id)
     .maybeSingle();
   if (bySlug.error) {
@@ -92,18 +98,22 @@ export async function getProvider(id: string): Promise<ProviderDetail | null> {
   }
   let row = bySlug.data;
   if (!row) {
-    const byId = await supabase
-      .from("providers")
-      .select("*, provider_services(*)")
-      .eq("id", id)
-      .maybeSingle();
+    const byId = await supabase.from("providers").select(DETAIL_SELECT).eq("id", id).maybeSingle();
     if (byId.error) {
       throw new HttpError("db_error", "No se pudo obtener el proveedor", 502, byId.error.message);
     }
     row = byId.data;
   }
   if (!row) return null;
-  return mapProviderRow(row);
+  const location =
+    (row.locations ?? []).find((l: Record<string, any>) => l.is_primary) ?? row.locations?.[0];
+  return mapProviderRow({
+    ...row,
+    commune: location?.commune ?? null,
+    address: location?.address ?? null,
+    lat: location?.lat ?? null,
+    lng: location?.lng ?? null,
+  });
 }
 
 export async function listReviews(providerId: string): Promise<Review[]> {
@@ -120,4 +130,52 @@ export async function listReviews(providerId: string): Promise<Review[]> {
   }
   const rows = (data ?? []) as Array<Record<string, any>>;
   return rows.map((row) => mapReviewRow(row));
+}
+
+/**
+ * RN-10 / REQ-PRO-05: el contacto se muestra al admin, al propio proveedor y al
+ * cliente que acepto una cotizacion de ese proveedor.
+ */
+export async function canSeeContact(
+  providerId: string,
+  viewer: AuthenticatedUser | null,
+): Promise<boolean> {
+  if (!viewer) return false;
+  if (viewer.role === "admin") return true;
+
+  const supabase = getServiceClient();
+  if (!supabase) {
+    const owner = findDemoProfileByProviderId(providerId);
+    if (viewer.role === "proveedor") return owner?.userId === viewer.id;
+    return owner ? demoHasAcceptedQuote(viewer.id, owner.userId) : false;
+  }
+
+  if (viewer.role === "proveedor") {
+    const { data } = await supabase
+      .from("providers")
+      .select("id")
+      .eq("id", providerId)
+      .eq("user_id", viewer.id)
+      .maybeSingle();
+    return Boolean(data);
+  }
+  const { data } = await supabase
+    .from("quotes")
+    .select("id, service_requests!inner(client_id)")
+    .eq("provider_id", providerId)
+    .eq("status", "aceptada")
+    .eq("service_requests.client_id", viewer.id)
+    .limit(1);
+  return (data ?? []).length > 0;
+}
+
+/** Detalle publico del proveedor con el contacto oculto segun RN-10. */
+export async function getProviderForViewer(
+  id: string,
+  viewer: AuthenticatedUser | null,
+): Promise<ProviderDetail | null> {
+  const provider = await getProvider(id);
+  if (!provider) return null;
+  if (await canSeeContact(provider.id, viewer)) return { ...provider, contactHidden: false };
+  return { ...provider, phone: null, email: null, contactHidden: true };
 }
