@@ -52,6 +52,8 @@ describe("mapProviderSummaryRow", () => {
       services: ["Ventilación industrial", "Montaje y mantenimiento"],
       priceFrom: 95000,
       isDemo: true,
+      isAvailable: true,
+      coverageRadiusKm: null,
     });
   });
 

@@ -45,6 +45,18 @@ export interface ProviderSummary {
   services: string[];
   priceFrom: number | null;
   isDemo: boolean;
+  /** PRO-06: disponible para nuevas solicitudes. */
+  isAvailable?: boolean;
+  /** PRO-03: radio de cobertura del proveedor. */
+  coverageRadiusKm?: number | null;
+}
+
+/** BUS-03: pagina de resultados de la busqueda. */
+export interface ProviderSearchResult {
+  items: ProviderSummary[];
+  total: number;
+  limit: number;
+  offset: number;
 }
 
 export interface ProviderDetail extends ProviderSummary {

@@ -40,20 +40,23 @@ function slugify(name: string): string {
 /** Refleja el perfil demo en la lista que usan la busqueda y la cola del admin. */
 function syncDemoProvider(profile: ProviderProfile): void {
   const commune = findCommune(profile.commune);
+  const existing = demoProviders.find((p) => p.id === profile.id);
   const detail: ProviderDetail = {
     id: profile.id,
     legalName: profile.legalName,
     slug: profile.slug,
     segment: profile.segment,
     verificationStatus: profile.verificationStatus,
-    ratingAvg: null,
-    reviewsCount: 0,
+    ratingAvg: existing?.ratingAvg ?? null,
+    reviewsCount: existing?.reviewsCount ?? 0,
     city: profile.commune,
     commune: profile.commune,
     distanceMeters: null,
     services: profile.services.map((s) => s.name),
     priceFrom: Math.min(...profile.services.map((s) => s.priceFrom ?? Infinity)) || null,
     isDemo: true,
+    isAvailable: profile.isAvailable,
+    coverageRadiusKm: profile.coverageRadiusKm,
     rut: profile.rut,
     email: profile.email,
     phone: profile.phone,
@@ -91,8 +94,9 @@ export function findDemoProfileByProviderId(
 function seedDemoProfile(userId: string): ProviderProfile | null {
   if (userId !== "demo-proveedor") return null;
   const profile: ProviderProfile = {
-    id: "p-demo-proveedor",
-    slug: "p-demo-proveedor",
+    // Reutiliza la ficha demo existente de Hogar Fresco para no duplicarla en la busqueda.
+    id: "p-hogar-fresco",
+    slug: "p-hogar-fresco",
     legalName: "Hogar Fresco Instalaciones",
     rut: "769876545",
     segment: "residencial",

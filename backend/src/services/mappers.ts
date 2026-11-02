@@ -58,6 +58,8 @@ export function mapProviderSummaryRow(
         : services.map((service) => service.name),
     priceFrom: row.price_from ?? row.priceFrom ?? minPrice(services),
     isDemo: Boolean(row.is_demo ?? row.isDemo ?? false),
+    isAvailable: row.is_available ?? row.isAvailable ?? true,
+    coverageRadiusKm: row.coverage_radius_km ?? row.coverageRadiusKm ?? null,
   };
 }
 

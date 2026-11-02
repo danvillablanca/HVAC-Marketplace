@@ -1,5 +1,6 @@
 import type {
   NearbySearchInput,
+  ProviderSearchResult,
   ProviderDetail,
   ProviderSummary,
   Review,
@@ -32,9 +33,9 @@ export interface ListProvidersResult {
   offset: number;
 }
 
-export async function searchNearby(input: NearbySearchInput): Promise<ProviderSummary[]> {
+export async function searchNearby(input: NearbySearchInput): Promise<ProviderSearchResult> {
   const supabase = getServiceClient();
-  if (!supabase) return searchDemoProviders(input);
+  if (!supabase) return { ...searchDemoProviders(input), limit: input.limit, offset: input.offset };
 
   const { data, error } = await supabase.rpc("nearby_providers", {
     p_lat: input.lat,
@@ -45,12 +46,20 @@ export async function searchNearby(input: NearbySearchInput): Promise<ProviderSu
     p_query: input.query ?? null,
     p_limit: input.limit,
     p_offset: input.offset,
+    p_min_rating: input.minRating ?? null,
+    p_only_available: input.onlyAvailable,
+    p_sort: input.sort,
   });
   if (error) {
     throw new HttpError("db_error", "No se pudo buscar proveedores", 502, error.message);
   }
   const rows = (data ?? []) as Array<Record<string, any>>;
-  return rows.map((row) => mapProviderSummaryRow(row));
+  return {
+    items: rows.map((row) => mapProviderSummaryRow(row)),
+    total: rows.length > 0 ? Number(rows[0].total_count) : 0,
+    limit: input.limit,
+    offset: input.offset,
+  };
 }
 
 export async function listProviders(input: ListProvidersInput): Promise<ListProvidersResult> {

@@ -7,6 +7,7 @@ import type {
   Review,
   ServiceSegment,
 } from "@hvac/shared";
+import { SERVICE_CATALOG } from "@hvac/shared";
 
 interface DemoProviderInput {
   id: string;
@@ -384,6 +385,8 @@ export function toProviderSummary(provider: ProviderDetail, origin?: GeoPoint): 
     services: provider.services,
     priceFrom: provider.priceFrom,
     isDemo: provider.isDemo,
+    isAvailable: provider.isAvailable,
+    coverageRadiusKm: provider.coverageRadiusKm ?? null,
   };
 }
 
@@ -393,26 +396,54 @@ function matchesQuery(provider: ProviderDetail, needle: string | undefined): boo
   return haystack.some((value) => value.toLowerCase().includes(needle));
 }
 
-export function searchDemoProviders(input: NearbySearchInput): ProviderSummary[] {
+/** Compara nombres de servicio sin tildes ni mayusculas (los demo usan tildes, el catalogo no). */
+function sameName(a: string, b: string): boolean {
+  const norm = (v: string) =>
+    v
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  return norm(a) === norm(b);
+}
+
+export function searchDemoProviders(input: NearbySearchInput): {
+  items: ProviderSummary[];
+  total: number;
+} {
   const origin = { lat: input.lat, lng: input.lng };
   const radius = input.radiusKm * 1000;
   const needle = input.query?.toLowerCase();
-  return (
-    demoProviders
-      // VER-03 / D-12: solo proveedores verificados aparecen en la busqueda.
-      .filter((provider) => provider.verificationStatus === "verificado")
-      .filter((provider) => !input.segment || provider.segment === input.segment)
-      .filter(
-        (provider) =>
-          !input.serviceId ||
-          provider.servicesDetailed.some((service) => service.id === input.serviceId),
-      )
-      .filter((provider) => matchesQuery(provider, needle))
-      .map((provider) => toProviderSummary(provider, origin))
-      .filter((provider) => (provider.distanceMeters ?? Infinity) <= radius)
-      .sort((a, b) => (a.distanceMeters ?? 0) - (b.distanceMeters ?? 0))
-      .slice(input.offset, input.offset + input.limit)
-  );
+  const serviceName = SERVICE_CATALOG.find((s) => s.id === input.serviceId)?.name;
+  const all = demoProviders
+    // VER-03 / D-12: solo proveedores verificados aparecen en la busqueda.
+    .filter((provider) => provider.verificationStatus === "verificado")
+    .filter((provider) => !input.segment || provider.segment === input.segment)
+    .filter(
+      (provider) =>
+        !input.serviceId ||
+        provider.servicesDetailed.some(
+          (service) =>
+            service.id === input.serviceId ||
+            (serviceName !== undefined && sameName(service.name, serviceName)),
+        ),
+    )
+    .filter((provider) => matchesQuery(provider, needle))
+    .filter((provider) => input.minRating == null || (provider.ratingAvg ?? 0) >= input.minRating)
+    .filter((provider) => !input.onlyAvailable || provider.isAvailable !== false)
+    .map((provider) => toProviderSummary(provider, origin))
+    // BUS-02: dentro del radio buscado y de la cobertura del proveedor (si la declara).
+    .filter(
+      (provider) =>
+        (provider.distanceMeters ?? Infinity) <=
+        Math.min(radius, (provider.coverageRadiusKm ?? Infinity) * 1000),
+    )
+    .sort((a, b) =>
+      input.sort === "rating"
+        ? (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0) ||
+          (a.distanceMeters ?? 0) - (b.distanceMeters ?? 0)
+        : (a.distanceMeters ?? 0) - (b.distanceMeters ?? 0),
+    );
+  return { items: all.slice(input.offset, input.offset + input.limit), total: all.length };
 }
 
 export interface DemoListOptions {

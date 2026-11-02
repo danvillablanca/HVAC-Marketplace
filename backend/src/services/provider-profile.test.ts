@@ -64,8 +64,16 @@ describe("perfil del proveedor (modo demo)", () => {
   it("PR-013/014/015 verificacion: revision, aprobacion, notificacion y busqueda", async () => {
     const userId = "prov-nuevo-4";
     const saved = await saveMyProfile(userId, { ...baseInput, legalName: "Verificable Ltda." });
-    const origin = { lat: -33.456, lng: -70.598, radiusKm: 10, limit: 50, offset: 0 };
-    expect((await searchNearby(origin)).some((p) => p.id === saved.id)).toBe(false);
+    const origin = {
+      lat: -33.456,
+      lng: -70.598,
+      radiusKm: 10,
+      limit: 50,
+      offset: 0,
+      sort: "distance" as const,
+      onlyAvailable: false,
+    };
+    expect((await searchNearby(origin)).items.some((p) => p.id === saved.id)).toBe(false);
 
     const sent = await requestVerification(userId, { documents: ["RUT y patente comercial"] });
     expect(sent.verificationStatus).toBe("en_revision");
@@ -76,7 +84,7 @@ describe("perfil del proveedor (modo demo)", () => {
     expect((await listNotifications(userId)).some((n) => n.type === "verificacion_aprobada")).toBe(
       true,
     );
-    expect((await searchNearby(origin)).some((p) => p.id === saved.id)).toBe(true);
+    expect((await searchNearby(origin)).items.some((p) => p.id === saved.id)).toBe(true);
   });
 
   it("PR-014 el rechazo exige motivo y lo informa al proveedor", async () => {

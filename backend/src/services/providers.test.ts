@@ -9,13 +9,15 @@ function searchInput(overrides: Partial<NearbySearchInput> = {}): NearbySearchIn
     radiusKm: 50,
     limit: 20,
     offset: 0,
+    sort: "distance",
+    onlyAvailable: false,
     ...overrides,
   };
 }
 
 describe("searchNearby (fallback demo)", () => {
   it("devuelve proveedores cercanos ordenados por distancia", async () => {
-    const results = await searchNearby(searchInput());
+    const results = (await searchNearby(searchInput())).items;
 
     expect(results.length).toBeGreaterThan(0);
     expect(results[0]?.id).toBe("p-clima-andes");
@@ -24,11 +26,11 @@ describe("searchNearby (fallback demo)", () => {
   });
 
   it("respeta el filtro por segment y la paginación", async () => {
-    const industrial = await searchNearby(searchInput({ segment: "industrial" }));
+    const industrial = (await searchNearby(searchInput({ segment: "industrial" }))).items;
     expect(industrial.length).toBeGreaterThan(0);
     expect(industrial.every((provider) => provider.segment === "industrial")).toBe(true);
 
-    const page = await searchNearby(searchInput({ limit: 2, offset: 0 }));
+    const page = (await searchNearby(searchInput({ limit: 2, offset: 0 }))).items;
     expect(page).toHaveLength(2);
   });
 });
