@@ -8,6 +8,8 @@ export const env = {
   supabaseAnonKey: real(import.meta.env.VITE_SUPABASE_ANON_KEY),
   mapTilerKey: import.meta.env.VITE_MAPTILER_KEY ?? "",
   demoMode: import.meta.env.VITE_DEMO_MODE === "true",
+  /** REQ-AUT-06: mostrar "Continuar con Google" solo si el proveedor OAuth esta configurado. */
+  googleAuthEnabled: import.meta.env.VITE_GOOGLE_AUTH_ENABLED === "true",
 };
 
 export const hasSupabaseConfig = Boolean(env.supabaseUrl && env.supabaseAnonKey);
