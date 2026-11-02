@@ -146,12 +146,25 @@ describe("schemas/provider", () => {
   });
 
   describe("verificationDecisionSchema", () => {
-    it("acepta cada decision permitida", () => {
-      for (const decision of ["verificado", "rechazado", "en_revision"] as const) {
+    it("acepta cada decision permitida (rechazo con motivo)", () => {
+      for (const decision of ["verificado", "en_revision"] as const) {
         expect(verificationDecisionSchema.safeParse({ providerId: uuid, decision }).success).toBe(
           true,
         );
       }
+      expect(
+        verificationDecisionSchema.safeParse({
+          providerId: uuid,
+          decision: "rechazado",
+          note: "Patente vencida",
+        }).success,
+      ).toBe(true);
+    });
+
+    it("PR-014 exige motivo al rechazar", () => {
+      expect(
+        verificationDecisionSchema.safeParse({ providerId: uuid, decision: "rechazado" }).success,
+      ).toBe(false);
     });
 
     it("acepta una nota opcional y la recorta", () => {
