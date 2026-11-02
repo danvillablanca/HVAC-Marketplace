@@ -94,3 +94,34 @@
 - Plantillas de correo en español (NOT-02, Bloque F).
 - Bloque C: perfil y verificación del proveedor; corregir D-12.
 
+---
+
+## Bloque C — Sprint 1: perfil y verificación del proveedor (REQ-PRO, REQ-VER)
+
+**Fecha:** 02/11/2026 · **Rama:** `feature/bloque-c`
+
+### Lo hecho
+- Observaciones del cliente al probar el panel: el proveedor ahora edita su perfil y **carga sus servicios desde su cuenta**; "Editar perfil" lleva a `/panel/proveedor/perfil`; "Para proveedores" ya no aparece en el navbar con sesión; la verificación se mantiene simple.
+- **PRO-01/02/03/06:** formulario de perfil (empresa, contacto, servicios del catálogo con precio desde, comuna base y radio 1–100 km, disponibilidad y horario semanal) y `GET/PUT /api/providers/me`.
+- **VER-01/02/03:** el wizard envía la solicitud (`en_revision` + `verification_items`); el admin aprueba o rechaza con motivo obligatorio; `audit_log` y notificación al proveedor; el dashboard muestra el estado real y el motivo de rechazo.
+- **PRO-05 / RN-10:** el detalle público oculta teléfono y correo salvo al admin, al propio proveedor y al cliente con cotización aceptada.
+- Migración `0008`: búsqueda solo de verificados, acotada al radio de cobertura, con texto, paginación y coordenadas.
+- Verificación contra Supabase local: 13/13 pasos OK (registro → perfil → verificación → aprobación → notificación → búsqueda → contacto oculto). 6 pruebas pgTAP de búsqueda.
+
+### Problemas encontrados
+- **D-18 (crítico):** con Supabase real la búsqueda no funcionaba (parámetros inexistentes en la RPC, sin coordenadas ni servicios).
+- **D-19 (crítico):** con Supabase real no se puede cotizar (`provider_id` recibía el id del usuario).
+- **D-20/D-21:** inconsistencias del panel reportadas por el cliente.
+
+### Cómo se resolvieron
+- D-18: `nearby_providers` reescrita y mapper corregido.
+- D-20/D-21: corregidos en este bloque.
+- D-19 queda para el Bloque E (cotizaciones).
+
+### Diferido
+- **PRO-04 (Storage de documentos y galería):** por decisión del cliente la verificación no requiere subir archivos por ahora. Va a la Solicitud de Cambio.
+- Vista previa del radio de cobertura sobre el mapa (hoy se indica en texto).
+
+### Lo que sigue
+- Bloque D (búsqueda): selector región → comuna, radio por defecto 10 km, filtros por calificación y disponibilidad, paginación en la UI.
+

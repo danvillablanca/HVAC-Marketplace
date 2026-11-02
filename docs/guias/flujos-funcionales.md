@@ -27,9 +27,10 @@ Guía paso a paso de todos los flujos que puedes verificar en **HVAC Connect** c
 | 1 | Abrir `http://localhost:5173` | Landing con hero "Encuentra y contrata proveedores HVAC", CTA "Publicar requerimiento gratis" y "Ver proveedores cerca". |
 | 2 | Click en "Publicar requerimiento gratis" | Navega a `/mapa` con el mapa interactivo de proveedores. |
 | 3 | Navegar a `/buscar` | Lista de proveedores con filtros (segmento, servicio, comuna). |
-| 4 | Click en una tarjeta de proveedor | Navega a `/proveedor/:id` con detalle: nombre, servicios, reseñas, ubicación. |
+| 4 | Click en una tarjeta de proveedor | Abre el modal del proveedor; "Ver perfil completo" navega a `/proveedor/:id`. Sin sesión (o sin cotización aceptada) el teléfono y el correo aparecen ocultos (RN-10). |
 | 5 | Scroll a la sección FAQ en la landing | Sección interactuable: click en "¿Cómo verifican a los proveedores?" abre la respuesta. |
 | 6 | Navegar a `/para-proveedores` | Página informativa para proveedores con CTA de registro. |
+| 7 | Iniciar sesión con cualquier cuenta | El ítem "Para proveedores" desaparece del navbar. |
 
 ---
 
@@ -174,12 +175,20 @@ Guía paso a paso de todos los flujos que puedes verificar en **HVAC Connect** c
 
 ---
 
-## Flujo 12 — Verificación de proveedor
+## Flujo 12 — Perfil y verificación del proveedor
 
-**Requisito:** estar logueado como `proveedor@demo.cl`.
+**Requisito:** estar logueado como proveedor (por ejemplo, uno recién registrado).
 
 | Paso | Acción | Resultado esperado |
 | ---- | ------ | ------------------ |
+| 1 | Ir a `/panel/proveedor` | Si no hay perfil, aviso "Completa el perfil de tu empresa"; la tarjeta de verificación muestra el estado real ("Sin verificar", "En revisión", "Verificado" o "Rechazado" con su motivo). |
+| 2 | Click en "Editar perfil" / "Completar perfil" | Navega a `/panel/proveedor/perfil` (no a `/para-proveedores`). |
+| 3 | Completar datos, elegir servicios del catálogo (con precio desde opcional), comuna base, radio de cobertura y horario; "Guardar perfil" | "Perfil guardado". Al recargar se conservan los servicios. |
+| 4 | Ir a `/panel/proveedor/verificacion` | Los datos de empresa vienen del perfil; se declaran los documentos (sin subir archivos) y se envía. Queda "Solicitud en revision". |
+| 5 | Login `admin@demo.cl` → `/panel/admin/verificaciones` | El proveedor aparece en la cola; "Aprobar" o "Rechazar" (con motivo obligatorio). |
+| 6 | Volver como proveedor | Notificación "Tu empresa fue verificada" (o el motivo del rechazo) y estado actualizado. Ya aparece en `/buscar`. |
+
+---- | ------ | ------------------ |
 | 1 | Ir a `/panel/proveedor/verificacion` | Formulario o estado actual de verificación del proveedor. |
 | 2 | Enviar documentos de verificación (RUT empresa, etc.) | Solicitud enviada, queda en estado "pendiente" para revisión del admin. |
 

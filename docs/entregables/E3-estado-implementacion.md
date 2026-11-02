@@ -17,17 +17,17 @@
 | REQ-AUT-04 | Control de acceso por rol (rutas + RLS) | A | Implementado | `RequireRole` en todas las rutas `/panel/*` (`panel-routes.test.tsx`), 401/403 por endpoint (`access-control.test.ts`), rol leído desde `profiles`, rol inmutable para el usuario (D-14) | PR-004 | OK | 02/11/2026 |
 | REQ-AUT-05 | Logout y expiración de sesión | M | Implementado | `signOut` revoca la sesión en Supabase; `[auth.sessions] inactivity_timeout = 168h` y chequeo de última actividad en `auth-context.tsx` | PR-005 | OK (Supabase local) | 02/11/2026 |
 | REQ-AUT-06 | Login con Google (OAuth) | M | Implementado (sin credenciales) | Botón tras `VITE_GOOGLE_AUTH_ENABLED`, `/elegir-rol` + RPC `choose_role`; pasos en `despliegue.md`. Falta probar con credenciales reales de Google | PR-006 | OK con mocks; flujo real no ejecutado | 02/11/2026 |
-| REQ-PRO-01 | Editar perfil del proveedor | A | Pendiente | — | PR-007 | No ejecutada | — |
-| REQ-PRO-02 | Elegir servicios desde catálogo | A | Parcial | `provider_services` en DB; sin UI de edición | PR-008 | No ejecutada | — |
-| REQ-PRO-03 | Ubicación base y radio de cobertura | A | Parcial | `locations` con PostGIS; sin radio en modelo | PR-009 | No ejecutada | — |
-| REQ-PRO-04 | Documentos y galería en Storage | M | Pendiente | — | PR-010 | No ejecutada | — |
-| REQ-PRO-05 | Perfil público con insignia y reseñas | A | Implementado | `ProviderDetailPage`, `nearby_providers` RPC | PR-011 | No ejecutada | — |
-| REQ-PRO-06 | Disponibilidad semanal | M | Pendiente | — | PR-012 | No ejecutada | — |
-| REQ-VER-01 | Solicitud de verificación con documentos | A | Parcial | `verification_items` en DB; subida simulada | PR-013 | No ejecutada | — |
-| REQ-VER-02 | Cola de admin, aprobar/rechazar | A | Parcial | `admin-verification-table.tsx` con datos demo | PR-014 | No ejecutada | — |
-| REQ-VER-03 | Insignia "Verificado", solo verificados en búsqueda | A | Implementado | `nearby_providers` filtra por verificado | PR-015 | No ejecutada | — |
+| REQ-PRO-01 | Editar perfil del proveedor | A | Implementado | `/panel/proveedor/perfil` (`provider-profile-form.tsx`), `PUT /api/providers/me` con `providerProfileSchema` (descripción ≤1.000, teléfono, correo, experiencia, web) | PR-007 | OK (Supabase local) | 02/11/2026 |
+| REQ-PRO-02 | Elegir servicios desde catálogo | A | Implementado | Selector del catálogo (`GET /api/catalog/services`) con precio desde; se guarda en `provider_services` | PR-008 | OK (Supabase local) | 02/11/2026 |
+| REQ-PRO-03 | Ubicación base y radio de cobertura | A | Implementado | Comuna base (centroide de `communes`) y radio 1–100 km en `coverage_radius_km`. Sin vista previa del círculo en el mapa (solo texto) | PR-009 | OK (Supabase local) | 02/11/2026 |
+| REQ-PRO-04 | Documentos y galería en Storage | M | Diferido | Por decisión del cliente (02/11) la verificación se mantiene simple: se declaran los documentos sin subir archivos. Buckets `provider-docs` y `provider-gallery` quedan para la Solicitud de Cambio | PR-010 | No ejecutada | — |
+| REQ-PRO-05 | Perfil público con insignia y reseñas | A | Implementado | Contacto oculto hasta cotización aceptada (RN-10) en `GET /api/providers/:id` (`canSeeContact`); aviso en modal y página. Sin galería (ver PRO-04) | PR-011 | OK (Supabase local) | 02/11/2026 |
+| REQ-PRO-06 | Disponibilidad semanal | M | Implementado | Horario semanal (`weekly_hours`) y switch disponible/no disponible. La exclusión en la distribución de solicitudes se aplica en el Bloque E (SOL-02) | PR-012 | OK (Supabase local) | 02/11/2026 |
+| REQ-VER-01 | Solicitud de verificación con documentos | A | Implementado (versión simple) | Wizard toma los datos del perfil y declara documentos; `POST /api/providers/me/verification` deja `en_revision` y crea `verification_items`. Sin archivos (ver PRO-04) | PR-013 | OK (Supabase local) | 02/11/2026 |
+| REQ-VER-02 | Cola de admin, aprobar/rechazar | A | Implementado | Cola real ordenada por antigüedad; motivo obligatorio al rechazar (`verification_note`); `audit_log` y notificación al proveedor | PR-014 | OK (Supabase local) | 02/11/2026 |
+| REQ-VER-03 | Insignia "Verificado", solo verificados en búsqueda | A | Implementado | `nearby_providers` y la búsqueda demo filtran solo verificados (D-12); el dashboard muestra el estado real | PR-015 | OK (pgTAP + Supabase local) | 02/11/2026 |
 | REQ-BUS-01 | Ubicación del cliente | A | Implementado | Geolocalización en `SearchPage` | PR-016 | No ejecutada | — |
-| REQ-BUS-02 | Búsqueda por radio (PostGIS) | A | Implementado | `nearby_providers` con `ST_DWithin` | PR-017 | No ejecutada | — |
+| REQ-BUS-02 | Búsqueda por radio (PostGIS) | A | Implementado | `nearby_providers` (0008) con `ST_DWithin` acotado al radio de cobertura del proveedor. Radio por defecto de 10 km pendiente en la UI (Bloque D) | PR-017 | OK (pgTAP) | 02/11/2026 |
 | REQ-BUS-03 | Filtros, orden, paginación | A | Parcial | Filtro por segmento/texto y orden distancia/rating en `SearchPage`; sin paginación ni filtro por rating/disponibilidad | PR-018 | OK filtro segmento (demo) | 02/11/2026 |
 | REQ-BUS-04 | Resultados en mapa | B | Implementado | `MapView` con marcadores y clustering | PR-019 | No ejecutada | — |
 | REQ-SOL-01 | Crear solicitud de servicio | A | Parcial | `request-form.tsx`, `POST /api/requests`, tabla `service_requests` (0005). Faltan tipo de servicio, geolocalización y fotos | PR-020 | OK (demo) | 02/11/2026 |
@@ -90,12 +90,16 @@
 | D-09 | Baja | Desde el modal de proveedor no se llegaba al perfil `/proveedor/:id` | Faltaba enlace | Botón "Ver perfil completo" | Corregido | 02/11/2026 | 7dc1afb |
 | D-10 | Media | El nombre del usuario no se guarda en `profiles` al registrarse | El frontend envía `fullName` y `handle_new_user` lee `full_name` | `handle_new_user` lee `fullName`, `full_name` o `name` | Corregido | 02/11/2026 | Bloque B (0007) |
 | D-11 | Crítica | Cualquier usuario autenticado puede cambiar el estado de solicitudes ajenas | `transition_request` es `security definer` y no valida actor ni rol | Bloque E: validar actor por transición | Abierto | 02/11/2026 | — |
-| D-12 | Alta | La búsqueda muestra proveedores no verificados marcados `is_demo` (incumple VER-03) | `nearby_providers` filtra `verificado or is_demo` | Bloque C | Abierto | 02/11/2026 | — |
+| D-12 | Alta | La búsqueda muestra proveedores no verificados marcados `is_demo` (incumple VER-03) | `nearby_providers` filtra `verificado or is_demo` | Solo `verificado` en SQL y en la búsqueda demo | Corregido | 02/11/2026 | Bloque C (0008) |
 | D-13 | Media | `supabase start` falla con Supabase CLI v3 | `[inbucket]` ya no existe en `config.toml` | Renombrado a `[local_smtp]` | Corregido | 02/11/2026 | Bloque A |
 | D-14 | Crítica | Un usuario podía hacerse admin editando su propio perfil por la API REST | La política `profiles_update_own` permitía actualizar cualquier columna, incluido `role` | `revoke update` + `grant update (full_name, phone)`; el frontend lee el rol de `profiles` y no de metadatos | Corregido | 02/11/2026 | Bloque B (0007) |
 | D-15 | Alta | Los tests del frontend fallaban en CI | CI usaba Node 20 y la versión actual de jsdom requiere Node 22 | CI y `engines` en Node 22 LTS | Corregido | 02/11/2026 | 26e67e8 |
 | D-16 | Alta | Los E2E fallaban en CI | Playwright pasaba el puerto por `PORT` (ignorado tras D-04) y no activaba el modo demo tras D-02 | Puertos por línea de comandos, `DEMO_MODE`/`VITE_DEMO_MODE` y `FRONTEND_ORIGIN` explícitos; textos de tests al día | Corregido | 02/11/2026 | 5f2aa94, a18fc46 |
 | D-17 | Media | Crear solicitudes y aceptar cotizaciones solo exigía sesión, no rol | Rutas con `requireUser` | `requireRole(["cliente"])` en `POST /api/requests` y `PATCH /api/quotes/:id` | Corregido | 02/11/2026 | Bloque B |
+| D-18 | Crítica | Con Supabase real la búsqueda fallaba siempre y el mapa quedaba sin datos | El backend llamaba `nearby_providers` con `p_query`/`p_offset` inexistentes; la RPC no devolvía coordenadas y el mapper ignoraba su lista de servicios | `nearby_providers` reescrita (texto, paginación, `lat`/`lng`, `total_count`); mapper usa `services` | Corregido | 02/11/2026 | Bloque C (0008) |
+| D-19 | Crítica | Con Supabase real no se puede enviar una cotización | `POST /api/quotes` guarda el id del usuario como `provider_id`, que referencia a `providers.id` | Bloque E: resolver el proveedor del usuario | Abierto | 02/11/2026 | — |
+| D-20 | Media | El dashboard del proveedor mostraba siempre "Verificado"; "Editar perfil" llevaba a `/para-proveedores`; el wizard no enviaba nada | UI de prototipo sin backend | Estado real desde `GET /api/providers/me`, enlace a `/panel/proveedor/perfil` y envío real | Corregido | 02/11/2026 | Bloque C |
+| D-21 | Baja | "Para proveedores" aparecía en el navbar a usuarios con sesión | Menú sin distinción por sesión | Ítem solo para visitantes | Corregido | 02/11/2026 | Bloque C |
 
 ## 5. URL de producción y credenciales demo
 

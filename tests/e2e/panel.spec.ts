@@ -18,7 +18,9 @@ test.describe("Paneles", () => {
     await loginAsDemo(page, "proveedor");
     await page.goto("/panel/admin/verificaciones");
 
-    await expect(page).toHaveURL(/\/ingresar$/);
+    // Rebota por /ingresar y, como ya tiene sesion, termina en su propio panel.
+    await expect(page).toHaveURL(/\/panel\/proveedor$/);
+    await expect(page.getByText("Bandeja de verificacion")).toHaveCount(0);
   });
 
   test("proveedor ve su dashboard", async ({ page }) => {
@@ -30,14 +32,33 @@ test.describe("Paneles", () => {
     await expect(page.getByText("Estado de verificacion", { exact: true })).toBeVisible();
   });
 
-  test("proveedor accede al wizard de verificacion", async ({ page }) => {
+  test("proveedor verificado ve su estado en la pagina de verificacion", async ({ page }) => {
     await loginAsDemo(page, "proveedor");
     await page.goto("/panel/proveedor/verificacion");
 
-    await expect(
-      page.getByRole("heading", { level: 1, name: "Verificacion de proveedor" }),
-    ).toBeVisible();
-    await expect(page.getByText("Paso 1 de 3")).toBeVisible();
-    await expect(page.getByLabel("Razon social")).toBeVisible();
+    await expect(page.getByText("Empresa verificada")).toBeVisible();
+  });
+
+  test("PR-007/PR-008 el proveedor edita su perfil y servicios desde 'Editar perfil'", async ({
+    page,
+  }) => {
+    await loginAsDemo(page, "proveedor");
+    await page.goto("/panel/proveedor");
+    await page.getByRole("link", { name: /Editar perfil/ }).click();
+    await expect(page).toHaveURL(/\/panel\/proveedor\/perfil$/);
+
+    await page.getByLabel("Inspeccion tecnica HVAC", { exact: true }).check();
+    await page.getByRole("button", { name: /Guardar perfil/ }).click();
+    await expect(page.getByText("Perfil guardado.")).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByLabel("Inspeccion tecnica HVAC", { exact: true })).toBeChecked();
+  });
+
+  test("con sesion no aparece 'Para proveedores' en el navbar", async ({ page }) => {
+    await loginAsDemo(page, "cliente");
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Para proveedores", exact: true })).toHaveCount(0);
   });
 });
