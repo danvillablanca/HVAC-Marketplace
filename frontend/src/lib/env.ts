@@ -1,12 +1,17 @@
+/** Los valores de ejemplo de .env.example ("your-...") cuentan como no configurados. */
+const real = (value: string | undefined) => (value && !value.startsWith("your-") ? value : "");
+
 /** Configuracion de entorno del frontend. */
 export const env = {
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001",
   supabaseUrl: import.meta.env.VITE_SUPABASE_URL ?? "",
-  supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY ?? "",
+  supabaseAnonKey: real(import.meta.env.VITE_SUPABASE_ANON_KEY),
   mapTilerKey: import.meta.env.VITE_MAPTILER_KEY ?? "",
+  demoMode: import.meta.env.VITE_DEMO_MODE === "true",
 };
 
 export const hasSupabaseConfig = Boolean(env.supabaseUrl && env.supabaseAnonKey);
+export const isDemoMode = env.demoMode;
 
 /**
  * Estilo de mapa para MapLibre.
