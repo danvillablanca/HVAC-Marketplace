@@ -380,11 +380,12 @@ export async function getRequestDetail(
       ? (await listRequests(user)).find((x) => x.id === requestId)
       : undefined;
     if (listed && providerId) {
-      return {
-        ...listed,
-        quotes: quotes.filter((q: Quote) => q.providerId === providerId),
-        events,
-      };
+      // Adjudicado: ve la fila completa (direccion y cliente); si no, la vista limitada.
+      const base =
+        listed.myQuoteStatus === "aceptada"
+          ? { ...full, distanceKm: listed.distanceKm, myQuoteStatus: listed.myQuoteStatus }
+          : listed;
+      return { ...base, quotes: quotes.filter((q: Quote) => q.providerId === providerId), events };
     }
   }
   throw new HttpError("forbidden", "No tienes acceso a esta solicitud", 403);
