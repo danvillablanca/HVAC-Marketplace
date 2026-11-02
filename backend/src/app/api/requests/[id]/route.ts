@@ -11,7 +11,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   return handleErrors(async () => {
     const user = await requireUser(req);
     const { id } = await params;
-    const detail = await getRequestDetail(id, user.id, user.role);
+    const detail = await getRequestDetail(id, user);
     return jsonOk(detail);
   });
 }
@@ -21,7 +21,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const user = await requireUser(req);
     const { id } = await params;
     const input = await parseBody(serviceRequestUpdateSchema, req);
-    const request = await transitionRequest(id, input.status, user.id, input.note);
+    const request = await transitionRequest(id, input.status, user, input.note);
     return jsonOk(request);
   });
 }

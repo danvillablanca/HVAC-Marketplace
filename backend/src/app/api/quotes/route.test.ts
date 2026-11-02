@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+import { verifiedDemoProvider } from "@/test/providers";
 import { jsonRequest } from "@/test/http";
 import { POST as CreateRequest } from "../requests/route";
 import { OPTIONS, POST } from "./route";
@@ -15,6 +16,10 @@ async function createRequest(): Promise<string> {
   const body = await res.json();
   return body.data.id as string;
 }
+
+beforeAll(async () => {
+  await verifiedDemoProvider("test-proveedor");
+});
 
 describe("POST /api/quotes", () => {
   it("crea una cotización y responde 201", async () => {

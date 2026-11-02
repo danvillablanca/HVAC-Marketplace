@@ -74,14 +74,17 @@ function syncDemoProvider(profile: ProviderProfile): void {
   else demoProviders.push(detail);
 }
 
+/** Perfiles demo con su usuario (incluye el precargado de `proveedor@demo.cl`). */
+export function listDemoProfiles(): Array<{ userId: string; profile: ProviderProfile }> {
+  if (!demoProfiles.has("demo-proveedor")) seedDemoProfile("demo-proveedor");
+  return [...demoProfiles.entries()].map(([userId, profile]) => ({ userId, profile }));
+}
+
 /** Busca el perfil demo de un proveedor por el id del proveedor (para la cola del admin). */
 export function findDemoProfileByProviderId(
   providerId: string,
 ): { userId: string; profile: ProviderProfile } | null {
-  for (const [userId, profile] of demoProfiles) {
-    if (profile.id === providerId) return { userId, profile };
-  }
-  return null;
+  return listDemoProfiles().find((entry) => entry.profile.id === providerId) ?? null;
 }
 
 /** Perfil precargado para `proveedor@demo.cl` en modo demo. */

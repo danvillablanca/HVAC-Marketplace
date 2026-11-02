@@ -14,6 +14,7 @@ import * as requests from "./requests/route";
 import * as request from "./requests/[id]/route";
 import * as reviews from "./reviews/route";
 import * as providerMe from "./providers/me/route";
+import * as requestConfirm from "./requests/[id]/confirm/route";
 import * as providerVerification from "./providers/me/verification/route";
 
 type Role = "cliente" | "proveedor" | "admin";
@@ -39,6 +40,7 @@ const PROTECTED: Array<[string, string, Handler, Role[]]> = [
   ["/api/requests/:id", "GET", request.GET, []],
   ["/api/requests/:id", "PATCH", request.PATCH, []],
   ["/api/reviews", "POST", reviews.POST, []],
+  ["/api/requests/:id/confirm", "POST", requestConfirm.POST, ["proveedor", "admin"]],
   ["/api/providers/me", "GET", providerMe.GET, ["cliente", "admin"]],
   ["/api/providers/me", "PUT", providerMe.PUT, ["cliente", "admin"]],
   ["/api/providers/me/verification", "POST", providerVerification.POST, ["cliente", "admin"]],

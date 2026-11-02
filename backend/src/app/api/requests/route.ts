@@ -10,7 +10,7 @@ export function OPTIONS() {
 export async function GET(req: Request) {
   return handleErrors(async () => {
     const user = await requireUser(req);
-    const requests = await listRequests(user.id, user.role);
+    const requests = await listRequests(user);
     return jsonOk(requests);
   });
 }

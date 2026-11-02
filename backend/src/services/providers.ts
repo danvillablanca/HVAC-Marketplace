@@ -147,7 +147,7 @@ export async function canSeeContact(
   if (!supabase) {
     const owner = findDemoProfileByProviderId(providerId);
     if (viewer.role === "proveedor") return owner?.userId === viewer.id;
-    return owner ? demoHasAcceptedQuote(viewer.id, owner.userId) : false;
+    return demoHasAcceptedQuote(viewer.id, providerId);
   }
 
   if (viewer.role === "proveedor") {

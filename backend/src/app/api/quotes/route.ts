@@ -12,8 +12,7 @@ export async function POST(req: Request) {
     // Solo proveedores pueden cotizar
     const user = await requireRole(req, ["proveedor"]);
     const input = await parseBody(quoteCreateSchema, req);
-    // TODO: obtener el provider_id del usuario
-    const quote = await createQuote(input, user.id);
+    const quote = await createQuote(input, user);
     return jsonOk(quote, { status: 201 });
   });
 }
