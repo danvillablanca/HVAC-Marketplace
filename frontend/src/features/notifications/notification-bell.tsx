@@ -10,11 +10,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/features/auth";
+import { useRealtimeInvalidate } from "@/lib/realtime";
 import { useNotifications, useUnreadCount, useMarkRead, useMarkAllRead } from "./hooks";
 
 function notificationLink(n: Notification): string | null {
   if (n.refType === "request" && n.refId) return `/panel/solicitudes/${n.refId}`;
   if (n.refType === "quote" && n.refId) return `/panel/solicitudes/${n.refId}`;
+  if (n.refType === "provider") return "/panel/proveedor";
   return null;
 }
 
@@ -31,8 +34,13 @@ function timeAgo(dateStr: string): string {
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
-  const { data: unread = 0 } = useUnreadCount();
-  const { data: notifications } = useNotifications();
+  const { user } = useAuth();
+  // NOT-01: en vivo con Supabase Realtime; sin Supabase (modo demo), polling corto.
+  const live = useRealtimeInvalidate("notifications", user ? `user_id=eq.${user.id}` : null, [
+    ["notifications"],
+  ]);
+  const { data: unread = 0 } = useUnreadCount(live ? false : 10_000);
+  const { data: notifications } = useNotifications(live ? false : 10_000);
   const markRead = useMarkRead();
   const markAllRead = useMarkAllRead();
 

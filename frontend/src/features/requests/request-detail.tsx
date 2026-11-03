@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/auth-context";
+import { RequestChat } from "@/features/chat";
 import {
   useConfirmCompletion,
   useDecideQuote,
@@ -270,6 +271,11 @@ export function RequestDetail({ requestId }: RequestDetailProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* MSG-01: el chat se habilita desde la primera cotizacion. */}
+      {detail.quotes.length > 0 && (isOwner || role === "proveedor") && (
+        <RequestChat requestId={requestId} />
+      )}
 
       {detail.events.length > 0 && (
         <Card>

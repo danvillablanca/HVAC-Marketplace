@@ -3,20 +3,20 @@ import type { Notification } from "@hvac/shared";
 import { apiFetch } from "@/lib/api";
 
 /** Lista las últimas 50 notificaciones del usuario. */
-export function useNotifications() {
+export function useNotifications(pollMs: number | false = 30_000) {
   return useQuery({
     queryKey: ["notifications"],
     queryFn: () => apiFetch<Notification[]>("/api/notifications"),
-    refetchInterval: 30_000, // polling cada 30s
+    refetchInterval: pollMs,
   });
 }
 
 /** Conteo de notificaciones no leídas (query ligera). */
-export function useUnreadCount() {
+export function useUnreadCount(pollMs: number | false = 15_000) {
   return useQuery({
     queryKey: ["notifications", "unread-count"],
     queryFn: () => apiFetch<{ unread: number }>("/api/notifications?count=unread"),
-    refetchInterval: 15_000, // polling cada 15s
+    refetchInterval: pollMs,
     select: (data) => data.unread,
   });
 }
