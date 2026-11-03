@@ -1,10 +1,13 @@
-# Marketplace HVAC
+# HVAC Connect (Marketplace HVAC)
 
-[![CI](https://github.com/<org>/HVAC-Marketplace/actions/workflows/ci.yml/badge.svg)](https://github.com/<org>/HVAC-Marketplace/actions/workflows/ci.yml)
-![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
+[![CI](https://github.com/danvillablanca/HVAC-Marketplace/actions/workflows/ci.yml/badge.svg)](https://github.com/danvillablanca/HVAC-Marketplace/actions/workflows/ci.yml)
+![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)
 ![pnpm](https://img.shields.io/badge/pnpm-12-orange)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)
 ![License](https://img.shields.io/badge/license-Acad%C3%A9mica-lightgrey)
+
+> **¿Continúas el desarrollo?** Lee primero [`AGENTS.md`](AGENTS.md): estado actual, pendientes,
+> decisiones de diseño y convenciones del proyecto.
 
 Plataforma para **encontrar y contratar proveedores HVAC verificados en Chile**: búsqueda
 geoespacial, fichas con reseñas y respaldo de estándares **ASHRAE**.

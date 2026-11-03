@@ -199,3 +199,12 @@
 ### Lo que sigue
 - Bloque G: diagnóstico con IA estructurado, búsqueda semántica y límite de uso (IA-01, IA-02, IA-04).
 
+---
+
+## Cierre de sesión — 03/11/2026
+
+- Bloques Paso 0, A, B, C, D, E y F integrados en `develop` (CI verde en cada rama).
+- Traspaso documentado en [`AGENTS.md`](../../AGENTS.md): estado, pendientes (Bloque G de IA y Bloque H de pruebas), decisiones de diseño y problemas conocidos del entorno.
+- Scripts de verificación contra Supabase real movidos a [`tests/real/`](../../tests/real/README.md).
+- Supabase local detenido (sin contenedores Docker activos).
+
