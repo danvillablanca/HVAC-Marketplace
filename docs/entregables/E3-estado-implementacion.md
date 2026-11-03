@@ -38,10 +38,10 @@
 | REQ-COT-01 | Cotización con monto CLP | A | Implementado | `create_quote`: solo elegibles y solicitudes abiertas; índice único parcial (RN-04); `expire_quotes` pasa a `vencida` al leer o aceptar | PR-025 | OK (Supabase local + pgTAP) | 02/11/2026 |
 | REQ-COT-02 | Comparar y aceptar cotizaciones | A | Implementado | Tabla comparativa (monto, IVA, plazo, vigencia, calificación, distancia, menor precio); aceptar rechaza el resto (RN-05), revela el contacto (RN-10) y notifica a todos; también rechazar | PR-026 | OK (Supabase local) | 02/11/2026 |
 | REQ-COT-03 | Marcar ejecución y completar | A | Implementado | Proveedor adjudicado marca En ejecución → Completada; el cliente confirma; auto-confirmación perezosa a los 7 días (sin `pg_cron`); la confirmación habilita el enlace a la reseña | PR-027 | OK (Supabase local) | 02/11/2026 |
-| REQ-MSG-01 | Chat en tiempo real | M | Pendiente | — | PR-028 | No ejecutada | — |
-| REQ-MSG-02 | Adjuntos de imagen | B | Pendiente | — | PR-029 | No ejecutada | — |
-| REQ-NOT-01 | Campana con notificaciones | M | Parcial | `notification-bell.tsx` + `/api/notifications` con polling 15–30 s; sin Realtime | PR-030 | OK (demo) | 02/11/2026 |
-| REQ-NOT-02 | Correos transaccionales | M | Pendiente | — | PR-031 | No ejecutada | — |
+| REQ-MSG-01 | Chat en tiempo real | M | Implementado | Hilo por solicitud y proveedor que cotizó (`0011`), RLS de participantes, Realtime `postgres_changes`, historial persistente, no leídos y "Leído"; polling de 5 s en modo demo | PR-028 | OK (Supabase local: 352 ms y 1.061 ms de entrega) | 03/11/2026 |
+| REQ-MSG-02 | Adjuntos de imagen | B | Diferido | Mismo criterio que PRO-04 (sin Storage por ahora, decisión del cliente) | PR-029 | No ejecutada | — |
+| REQ-NOT-01 | Campana con notificaciones | M | Implementado | Campana suscrita por Realtime a sus `notifications` (polling 10 s en demo); eventos: solicitud elegible, cotización recibida/aceptada/rechazada, mensaje nuevo, cambio de estado y resultado de verificación | PR-030 | OK (Supabase local) | 03/11/2026 |
+| REQ-NOT-02 | Correos transaccionales | M | Implementado | Plantillas en español de Supabase Auth (`supabase/templates/`); cotización recibida, cotización aceptada y verificación por Resend (`RESEND_API_KEY`), sin clave se registran en el log | PR-031 | OK (Mailpit + log; Resend con mocks) | 03/11/2026 |
 | REQ-VAL-01 | Reseña 1–5 solo si Completada | A | Parcial | `reviews` en DB; sin restricción por estado | PR-032 | No ejecutada | — |
 | REQ-VAL-02 | Promedio y conteo automáticos | A | Implementado | Trigger `increment_provider_reviews` | PR-033 | No ejecutada | — |
 | REQ-VAL-03 | Respuesta del proveedor | B | Pendiente | — | PR-034 | No ejecutada | — |
@@ -110,6 +110,8 @@
 | D-29 | Media | "Hogar Fresco Instalaciones" aparecía duplicado en la búsqueda demo | El perfil demo de `proveedor@demo.cl` usaba un id distinto al de la ficha existente | Reutiliza `p-hogar-fresco` y conserva su calificación | Corregido | 02/11/2026 | Bloque D |
 | D-30 | Media | La búsqueda ignoraba el servicio y la página pedidos | El hook del frontend no enviaba `serviceId` ni `offset` | Hook reescrito con todos los filtros | Corregido | 02/11/2026 | Bloque D |
 | D-31 | Baja | El contador de los clústeres del mapa no cargaba sus fuentes (404) | El estilo usado no tenía glifos para la fuente pedida | Estilo raster OSM con `glyphs` y `text-font` explícitos | Corregido | 02/11/2026 | Bloque D |
+| D-32 | Media | El primer mensaje del cliente podía fallar ("Ese proveedor no ha cotizado") si se enviaba apenas cargaba el chat | El hilo activo se fijaba en un `useEffect` después del primer render | Hilo activo derivado de los datos, sin efecto (detectado por E2E) | Corregido | 03/11/2026 | b925164 |
+| D-33 | Baja | Tests de formularios largos fallaban por tiempo en equipos cargados | Límite de 5 s por test con `userEvent` | `testTimeout` de 15 s en el frontend | Corregido | 03/11/2026 | Bloque F |
 
 ## 5. URL de producción y credenciales demo
 

@@ -177,3 +177,25 @@
 ### Lo que sigue
 - Bloque F: mensajería en tiempo real (Realtime) y notificaciones en vivo + correos.
 
+---
+
+## Bloque F — Sprint 2: mensajería y notificaciones (REQ-MSG, REQ-NOT)
+
+**Fecha:** 03/11/2026 · **Rama:** `feature/bloque-f`
+
+### Lo hecho
+- **MSG-01:** migración `0011` (hilo por solicitud y proveedor desde la primera cotización, RLS de participantes, Realtime); API de hilos y mensajes; chat en el detalle de la solicitud con pestañas por proveedor, no leídos y "Leído".
+- **NOT-01:** campana en vivo con Supabase Realtime (polling corto en modo demo) y notificación de mensaje nuevo.
+- **NOT-02:** plantillas de correo de cuenta en español; correos de cotización recibida, cotización aceptada y verificación por Resend, con degradación a log sin `RESEND_API_KEY`.
+- Verificación contra Supabase local con dos navegadores: entrega en vivo de 352 ms (proveedor → cliente) y 1.061 ms (cliente → proveedor); la campana sube sin recargar; otro proveedor no ve la conversación; correo de recuperación en español en Mailpit.
+
+### Problemas encontrados
+- **D-32:** carrera al enviar el primer mensaje (detectada por el E2E). **D-33:** timeouts de tests en equipos cargados.
+- El `node_modules` del worktree temporal se dañó al limpiarse `%TEMP%`; se reinstaló (solo afecta el entorno de pruebas).
+
+### Diferido
+- **MSG-02 (adjuntos en el chat):** sin Storage por ahora, mismo criterio que PRO-04.
+
+### Lo que sigue
+- Bloque G: diagnóstico con IA estructurado, búsqueda semántica y límite de uso (IA-01, IA-02, IA-04).
+
