@@ -19,7 +19,7 @@ function time(iso: string): string {
 /** REQ-MSG-01: conversacion entre el cliente y cada proveedor que cotizo. */
 export function RequestChat({ requestId }: { requestId: string }) {
   const { role } = useAuth();
-  const [providerId, setProviderId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
 
   // En vivo con Realtime; en modo demo, polling.
   const live = useRealtimeInvalidate("messages", `request_id=eq.${requestId}`, [
@@ -27,15 +27,13 @@ export function RequestChat({ requestId }: { requestId: string }) {
   ]);
   const poll = live ? false : POLL_MS;
   const threads = useThreads(requestId, poll);
+  // Sin seleccion explicita, el primer hilo (evita enviar sin proveedor mientras carga).
+  const providerId = selected ?? threads.data?.[0]?.providerId ?? null;
   const messages = useMessages(requestId, providerId, poll);
   const send = useSendMessage(requestId);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!providerId && threads.data?.length) setProviderId(threads.data[0].providerId);
-  }, [threads.data, providerId]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView?.({ block: "nearest" });
@@ -87,7 +85,7 @@ export function RequestChat({ requestId }: { requestId: string }) {
                 aria-selected={thread.providerId === providerId}
                 variant={thread.providerId === providerId ? "default" : "outline"}
                 size="sm"
-                onClick={() => setProviderId(thread.providerId)}
+                onClick={() => setSelected(thread.providerId)}
               >
                 {thread.providerName ?? "Proveedor"}
                 {thread.unread > 0 && (

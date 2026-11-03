@@ -45,10 +45,19 @@ test("PR-020..PR-027 solicitud, cotizacion, aceptacion, ejecucion y confirmacion
   await expect(page.getByText("Aceptada").first()).toBeVisible();
   const detailUrl = page.url();
 
+  // PR-028: chat cliente-proveedor (en modo demo se actualiza por polling).
+  await page.getByLabel("Escribe un mensaje").fill(`¿Pueden venir el lunes? ${ref}`);
+  await page.getByRole("button", { name: "Enviar mensaje" }).click();
+  await expect(page.getByLabel("Historial de mensajes")).toContainText(`¿Pueden venir el lunes? ${ref}`);
+
   await loginAsDemo(page, "proveedor");
   await page.goto("/panel/proveedor/bandeja");
   await expect(page.locator("section.space-y-3", { hasText: "Mis trabajos" })).toContainText(ref);
   await page.goto(detailUrl);
+  await expect(page.getByLabel("Historial de mensajes")).toContainText(`¿Pueden venir el lunes? ${ref}`);
+  await page.getByLabel("Escribe un mensaje").fill("Sí, el lunes a las 10:00");
+  await page.getByRole("button", { name: "Enviar mensaje" }).click();
+  await expect(page.getByLabel("Historial de mensajes")).toContainText("Sí, el lunes a las 10:00");
   await page.getByRole("button", { name: "Marcar en ejecución" }).click();
   await page.getByRole("button", { name: "Marcar como completada" }).click();
   await expect(page.getByText("Esperando la confirmación del cliente.")).toBeVisible();
