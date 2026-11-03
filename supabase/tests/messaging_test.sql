@@ -13,30 +13,30 @@ select ok(exists (select 1 from pg_publication_tables where pubname = 'supabase_
   'NOT-01: notifications esta publicada en Realtime');
 
 insert into public.messages (request_id, provider_id, sender_id, body) values
-  ('e0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000003', '0d000000-0000-4000-8000-000000000001', 'Hola Hogar Fresco'),
-  ('e0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000011', '0d000000-0000-4000-8000-000000000001', 'Hola Climatiza');
+  ('e0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000003', '0d000000-0000-4000-8000-000000000001', 'pgtap: Hola Hogar Fresco'),
+  ('e0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000011', '0d000000-0000-4000-8000-000000000001', 'pgtap: Hola Climatiza');
 
 set local role authenticated;
 
 -- Proveedor 1: solo ve su hilo.
 select set_config('request.jwt.claims', '{"sub":"0d000000-0000-4000-8000-000000000003","role":"authenticated"}', true);
-select is((select count(*)::int from public.messages where request_id = 'e0000000-0000-0000-0000-000000000002'), 1,
+select is((select count(*)::int from public.messages where request_id = 'e0000000-0000-0000-0000-000000000002' and body like 'pgtap:%'), 1,
   'PR-028: el proveedor solo ve los mensajes de su propio hilo');
 select lives_ok($$ insert into public.messages (request_id, provider_id, sender_id, body) values
-  ('e0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000003', auth.uid(), 'Respuesta') $$,
+  ('e0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000003', auth.uid(), 'pgtap: Respuesta') $$,
   'PR-028: el proveedor escribe en su hilo');
 select throws_ok($$ insert into public.messages (request_id, provider_id, sender_id, body) values
-  ('e0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000011', auth.uid(), 'Intromision') $$,
+  ('e0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000011', auth.uid(), 'pgtap: Intromision') $$,
   '42501', null, 'PR-028: el proveedor no escribe en el hilo de otro proveedor');
 
 -- Cliente: ve ambos hilos.
 select set_config('request.jwt.claims', '{"sub":"0d000000-0000-4000-8000-000000000001","role":"authenticated"}', true);
-select is((select count(*)::int from public.messages where request_id = 'e0000000-0000-0000-0000-000000000002'), 3,
+select is((select count(*)::int from public.messages where request_id = 'e0000000-0000-0000-0000-000000000002' and body like 'pgtap:%'), 3,
   'PR-028: el cliente ve los hilos con todos los proveedores que cotizaron');
 
 -- Otro cliente: no ve nada ni puede suplantar.
 select set_config('request.jwt.claims', '{"sub":"0d000000-0000-4000-8000-000000000002","role":"authenticated"}', true);
-select is((select count(*)::int from public.messages where request_id = 'e0000000-0000-0000-0000-000000000002'), 0,
+select is((select count(*)::int from public.messages where request_id = 'e0000000-0000-0000-0000-000000000002' and body like 'pgtap:%'), 0,
   'PR-028: un tercero no ve los mensajes');
 reset role;
 
