@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { waitForApi } from "./helpers";
+import { setRangeValue, waitForApi } from "./helpers";
 
 test.describe("Buscar /buscar", () => {
   test("lista proveedores cercanos", async ({ page }) => {
@@ -20,6 +20,8 @@ test.describe("Buscar /buscar", () => {
       (url) =>
         url.pathname === "/api/providers/search" && url.searchParams.get("query") === "solar",
     );
+    // Solar Verde (Maipu) queda a ~10,5 km: fuera del radio por defecto de 10 km (BUS-02).
+    await setRangeValue(page.getByLabel("Radio de busqueda"), 20);
     await page.getByLabel("Buscar servicio o proveedor").fill("solar");
     await response;
 

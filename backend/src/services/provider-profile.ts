@@ -203,7 +203,7 @@ export async function saveMyProfile(
     requireDemo();
     const current = demoProfiles.get(userId) ?? seedDemoProfile(userId);
     const profile: ProviderProfile = {
-      id: current?.id ?? `p-${randomUUID().slice(0, 8)}`,
+      id: current?.id ?? randomUUID(),
       slug: current?.slug ?? slugify(input.legalName),
       ...input,
       commune: commune.name,

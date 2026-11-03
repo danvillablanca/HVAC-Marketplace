@@ -89,6 +89,12 @@ export function AdminVerificationTable() {
             </div>
           ) : (
             <div className="overflow-x-auto">
+              {decide.error && (
+                <p role="alert" className="mb-3 text-sm text-destructive">
+                  No se pudo registrar la decisión:{" "}
+                  {decide.error instanceof Error ? decide.error.message : "error inesperado"}
+                </p>
+              )}
               <table className="w-full min-w-[720px] border-collapse text-sm">
                 <caption className="sr-only">Proveedores pendientes de verificacion</caption>
                 <thead>

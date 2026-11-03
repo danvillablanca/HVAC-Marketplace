@@ -87,3 +87,18 @@ describe("PATCH /api/admin/verifications", () => {
     expect(res.headers.get("Access-Control-Allow-Origin")).toBe("http://localhost:5173");
   });
 });
+
+describe("PR-014 aprobacion en modo demo (ids no UUID)", () => {
+  it("el admin aprueba un proveedor demo con id tipo slug", async () => {
+    const res = await PATCH(
+      adminRequest("PATCH", "/api/admin/verifications", {
+        providerId: "p-calor-central",
+        decision: "verificado",
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.status).toBe("verificado");
+  });
+});
+

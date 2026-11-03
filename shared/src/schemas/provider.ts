@@ -89,7 +89,8 @@ export type VerificationRequestInput = z.infer<typeof verificationRequestSchema>
 
 export const verificationDecisionSchema = z
   .object({
-    providerId: z.string().uuid(),
+    // UUID en Supabase; en modo demo los ids son tipo "p-clima-andes".
+    providerId: z.string().trim().min(3).max(100),
     decision: z.enum(["verificado", "rechazado", "en_revision"]),
     note: z.string().trim().max(500).optional(),
   })
