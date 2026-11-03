@@ -51,9 +51,18 @@ refresh_token_reuse_interval = 10
 inactivity_timeout = "168h"
 
 [auth.email]
-enable_signup = true
+enabled = true
 double_confirm_changes = true
 enable_confirmations = false
+
+# NOT-02: plantillas de correo de cuenta en espanol.
+[auth.email.template.recovery]
+subject = "Restablece tu contraseña de HVAC Connect"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.confirmation]
+subject = "Confirma tu cuenta en HVAC Connect"
+content_path = "./supabase/templates/confirmation.html"
 
 # REQ-AUT-06: login con Google. Para activarlo, define las variables en
 # supabase/.env y VITE_GOOGLE_AUTH_ENABLED=true (ver docs/guias/despliegue.md).
