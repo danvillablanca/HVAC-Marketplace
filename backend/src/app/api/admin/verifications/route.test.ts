@@ -101,4 +101,3 @@ describe("PR-014 aprobacion en modo demo (ids no UUID)", () => {
     expect(body.data.status).toBe("verificado");
   });
 });
-
