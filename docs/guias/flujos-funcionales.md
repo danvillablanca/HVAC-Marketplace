@@ -213,7 +213,7 @@ Guía paso a paso de todos los flujos que puedes verificar en **HVAC Connect** c
 
 | Paso | Acción | Resultado esperado |
 | ---- | ------ | ------------------ |
-| 1 | Ir a `/mapa` | Mapa centrado en Chile con marcadores de proveedores. |
+| 1 | Ir a `/mapa` | Mapa (teselas OpenStreetMap; MapTiler si hay `VITE_MAPTILER_KEY`) con marcadores de proveedores verificados. |
 | 2 | Click en un marcador | Popup con nombre del proveedor, servicios, rating. |
 | 3 | Click en "Ver perfil" en el popup | Navega a `/proveedor/:id`. |
 | 4 | Si el navegador pide ubicación y se concede | El mapa se centra en la ubicación del usuario. |
@@ -226,6 +226,15 @@ Guía paso a paso de todos los flujos que puedes verificar en **HVAC Connect** c
 
 | Paso | Acción | Resultado esperado |
 | ---- | ------ | ------------------ |
+| 1 | Ir a `/buscar` | Proveedores verificados a 10 km o menos (radio por defecto), con "Mostrando X–Y de N". |
+| 2 | Elegir región y comuna (o "Usar mi ubicación") | Los resultados se calculan desde la comuna elegida ("Resultados cerca de …"). |
+| 3 | Filtrar por servicio, calificación mínima, segmento o "Solo proveedores disponibles" | Se aplican de forma acumulativa. |
+| 4 | Ordenar por "Mejor calificados" | Orden descendente por calificación. |
+| 5 | Con más de 10 resultados, "Siguiente" / "Anterior" | Páginas de 10 ("Página 1 de N"). |
+
+> Un proveedor solo aparece si está **verificado** y el cliente está dentro de su **radio de cobertura**. Si una empresa no aparece, su panel muestra "¿Por qué no apareces en la búsqueda?" con lo que falta.
+
+---- | ------ | ------------------ |
 | 1 | Ir a `/buscar` | Lista completa de proveedores con filtros. |
 | 2 | Filtrar por segmento (residencial/comercial/industrial) | Solo se muestran proveedores del segmento seleccionado. |
 | 3 | Filtrar por servicio (ej: "Instalación de split") | Se filtran los resultados. |

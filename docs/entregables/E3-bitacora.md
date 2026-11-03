@@ -153,3 +153,27 @@
 ### Lo que sigue
 - Bloque D (búsqueda): selector región → comuna, radio por defecto 10 km, filtros por calificación y disponibilidad, paginación en la UI.
 
+---
+
+## Bloque D — Sprint 1: búsqueda (REQ-BUS)
+
+**Fecha:** 02/11/2026 · **Rama:** `feature/bloque-d`
+
+### Lo hecho
+- **Caso reportado por el cliente:** su empresa nueva no aparecía en `/buscar`. Causa: estaba "pendiente" (sin verificación enviada ni aprobada) y en Lo Barnechea, fuera del radio buscado desde el centro de Santiago. Ahora el panel del proveedor explica qué le falta para aparecer y la búsqueda permite elegir la comuna.
+- **BUS-01:** selector región → comuna cuando no hay geolocalización.
+- **BUS-02:** radio por defecto de 10 km; respeta la cobertura del proveedor.
+- **BUS-03:** filtros por servicio, calificación mínima y disponibilidad; orden en el servidor; páginas de 10 (migración `0010`).
+- **BUS-04:** teselas raster de OpenStreetMap por defecto (MapTiler si hay clave).
+- Verificación contra Supabase local: búsqueda por comuna, paginación (16 → 2 páginas), calificación ≥ 4,5 ordenada, disponibilidad, servicio y teselas OSM. 3 pruebas pgTAP nuevas; E2E del caso de visibilidad.
+
+### Problemas encontrados
+- **D-28:** en modo demo el admin no podía aprobar a nadie (el esquema exigía UUID) y la tabla ocultaba el error.
+- **D-29:** Hogar Fresco duplicado en modo demo. **D-30:** el hook no enviaba servicio ni página. **D-31:** fuentes del mapa con 404.
+
+### Cómo se resolvieron
+- Ver la tabla de defectos (D-27 a D-31).
+
+### Lo que sigue
+- Bloque F: mensajería en tiempo real (Realtime) y notificaciones en vivo + correos.
+
