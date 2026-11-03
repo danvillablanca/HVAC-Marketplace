@@ -3,6 +3,7 @@ import type { Notification, NotificationType } from "@hvac/shared";
 import { getServiceClient } from "../lib/supabase";
 import { isDemoMode } from "../lib/env";
 import { HttpError } from "../lib/http";
+import { sendEmail } from "../lib/email";
 
 // ---- Demo fallback ----
 const demoNotifications: Notification[] = [];
@@ -89,6 +90,43 @@ export async function markAllRead(userId: string): Promise<number> {
   return count ?? 0;
 }
 
+/** NOT-02: notificaciones que ademas se envian por correo. */
+export const EMAIL_NOTIFICATION_TYPES: NotificationType[] = [
+  "nueva_cotizacion",
+  "cotizacion_aceptada",
+  "verificacion_aprobada",
+  "verificacion_rechazada",
+];
+
+async function emailFor(params: {
+  userId: string;
+  type: NotificationType;
+  title: string;
+  body?: string;
+  refType?: string;
+  refId?: string;
+}) {
+  if (!EMAIL_NOTIFICATION_TYPES.includes(params.type)) return;
+  const supabase = getServiceClient();
+  // En modo demo no hay correos reales de usuarios: se registra en el log.
+  const to = supabase
+    ? (await supabase.from("profiles").select("email").eq("id", params.userId).maybeSingle()).data
+        ?.email
+    : `${params.userId}@demo.local`;
+  if (!to) return;
+  await sendEmail({
+    to,
+    subject: params.title,
+    text: params.body ?? params.title,
+    link:
+      params.refType === "request" && params.refId
+        ? `/panel/solicitudes/${params.refId}`
+        : params.type.startsWith("verificacion")
+          ? "/panel/proveedor"
+          : undefined,
+  });
+}
+
 export async function createNotification(params: {
   userId: string;
   type: NotificationType;
@@ -112,6 +150,7 @@ export async function createNotification(params: {
       createdAt: new Date().toISOString(),
     };
     demoNotifications.push(n);
+    void emailFor(params).catch(() => undefined);
     return n;
   }
 
@@ -130,6 +169,7 @@ export async function createNotification(params: {
 
   if (error)
     throw new HttpError("db_error", "No se pudo crear la notificación", 502, error.message);
+  void emailFor(params).catch(() => undefined);
   return mapRow(data);
 }
 

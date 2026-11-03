@@ -221,6 +221,30 @@ export interface RequestEvent {
   createdAt: string;
 }
 
+// ---- Mensajeria (MSG-01) ----
+
+export interface ChatMessage {
+  id: string;
+  requestId: string;
+  providerId: string;
+  senderId: string;
+  /** El mensaje lo escribio el usuario que consulta. */
+  mine: boolean;
+  body: string;
+  readAt: string | null;
+  createdAt: string;
+}
+
+/** Resumen de un hilo (cliente con cada proveedor que cotizo). */
+export interface ChatThread {
+  requestId: string;
+  providerId: string;
+  providerName: string | null;
+  unread: number;
+  lastMessage: string | null;
+  lastAt: string | null;
+}
+
 // ---- Notificaciones ----
 
 export const NOTIFICATION_TYPES = [
@@ -231,6 +255,7 @@ export const NOTIFICATION_TYPES = [
   "solicitud_actualizada",
   "verificacion_aprobada",
   "verificacion_rechazada",
+  "nuevo_mensaje",
   "sistema",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

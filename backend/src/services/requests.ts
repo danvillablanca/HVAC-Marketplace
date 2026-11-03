@@ -806,3 +806,51 @@ export function demoHasAcceptedQuote(clientId: string, providerId: string): bool
 export function resetDemoRequests(): void {
   demoRequests.clear();
 }
+
+/** Participantes posibles de los hilos de una solicitud (MSG-01). */
+export interface ThreadContext {
+  requestId: string;
+  clientId: string;
+  providers: Array<{ providerId: string; providerName: string | null; userId: string | null }>;
+}
+
+export async function getThreadContext(requestId: string): Promise<ThreadContext> {
+  const db = getServiceClient();
+  if (!db) {
+    requireDemo();
+    const r = demoRequests.get(requestId);
+    if (!r) throw new HttpError("not_found", "Solicitud no encontrada", 404);
+    const owners = new Map(listDemoProfiles().map((p) => [p.profile.id, p]));
+    const seen = new Set<string>();
+    return {
+      requestId,
+      clientId: r.clientId,
+      providers: r.quotes
+        .filter((q) => !seen.has(q.providerId) && seen.add(q.providerId))
+        .map((q) => ({
+          providerId: q.providerId,
+          providerName: owners.get(q.providerId)?.profile.legalName ?? q.providerName,
+          userId: owners.get(q.providerId)?.userId ?? null,
+        })),
+    };
+  }
+  const { data: request } = await db
+    .from("service_requests")
+    .select("client_id")
+    .eq("id", requestId)
+    .maybeSingle();
+  if (!request) throw new HttpError("not_found", "Solicitud no encontrada", 404);
+  const { data: quotes } = await db
+    .from("quotes")
+    .select("provider_id, providers(legal_name, user_id)")
+    .eq("request_id", requestId);
+  const unique = new Map<string, ThreadContext["providers"][number]>();
+  for (const q of quotes ?? []) {
+    unique.set(String(q.provider_id), {
+      providerId: String(q.provider_id),
+      providerName: q.providers?.legal_name ?? null,
+      userId: q.providers?.user_id ?? null,
+    });
+  }
+  return { requestId, clientId: String(request.client_id), providers: [...unique.values()] };
+}

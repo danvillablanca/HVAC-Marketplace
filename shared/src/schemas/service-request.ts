@@ -41,3 +41,11 @@ export const quoteDecisionSchema = z.object({
 });
 export type QuoteDecisionInput = z.infer<typeof quoteDecisionSchema>;
 export type QuoteAcceptInput = z.infer<typeof quoteAcceptSchema>;
+
+/** MSG-01: mensaje en un hilo. El cliente indica el proveedor; el proveedor usa el suyo. */
+export const messageCreateSchema = z.object({
+  providerId: z.string().trim().min(3).max(100).optional(),
+  body: z.string().trim().min(1, "Escribe un mensaje").max(2000, "Maximo 2.000 caracteres"),
+});
+export type MessageCreateInput = z.infer<typeof messageCreateSchema>;
+
