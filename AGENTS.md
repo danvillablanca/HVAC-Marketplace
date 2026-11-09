@@ -42,6 +42,7 @@ pnpm test:e2e                 # Playwright en modo demo (lo mismo que CI)
 
 - **Modo demo** (`DEMO_MODE=true`, `VITE_DEMO_MODE=true`, sin claves de Supabase): todo en memoria, se borra al reiniciar el backend. Las claves de ejemplo `your-...` de `.env.example` cuentan como vacías.
 - **Modo real**: copiar en `.env` las claves de `npx supabase status` y poner ambos `DEMO_MODE=false` (ver `docs/guias/demo.md`).
+- **Supabase oficial (nube)**: proyecto `paklzafoipzghfyftnfw`; pasos en [`docs/guias/supabase-oficial.md`](docs/guias/supabase-oficial.md). Al 09/11/2026 estaba **pausado** (su URL no resolvía) y la cuenta de este equipo no tenía permisos (403): lo debe restaurar y compartir su dueño. En la nube "Confirm email" está activo: la app muestra "Revisa tu correo" y el login avisa si falta confirmar.
 - Cuentas demo (contraseña `demo1234`): `cliente@demo.cl`, `cliente2@demo.cl`, `proveedor@demo.cl`, `proveedor2@demo.cl`, `admin@demo.cl`.
 - Recorridos contra Supabase real: [`tests/real/`](tests/real/README.md).
 - CI (`.github/workflows/ci.yml`): job `verify` (typecheck, lint, build, unit, E2E) y job `database` (Supabase + pgTAP).
