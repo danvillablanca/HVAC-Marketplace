@@ -15,18 +15,23 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth";
 import { NotificationBell } from "@/features/notifications";
 
-const NAV = [
-  { to: "/mapa", label: "Mapa" },
-  { to: "/buscar", label: "Buscar proveedores" },
-  { to: "/chat", label: "Asistente IA" },
-  // Pagina de captacion: no tiene sentido para quien ya tiene cuenta.
-  { to: "/para-proveedores", label: "Para proveedores", guestOnly: true },
+type Audience = "guest" | "cliente" | "proveedor" | "admin";
+
+// Cada rol ve solo lo que puede usar: el proveedor no contrata, el cliente no cotiza.
+const NAV: Array<{ to: string; label: string; for: Audience[] }> = [
+  { to: "/mapa", label: "Mapa", for: ["guest", "cliente", "admin"] },
+  { to: "/buscar", label: "Buscar proveedores", for: ["guest", "cliente", "admin"] },
+  { to: "/chat", label: "Asistente IA", for: ["guest", "cliente"] },
+  { to: "/para-proveedores", label: "Para proveedores", for: ["guest"] },
+  { to: "/panel/proveedor/bandeja", label: "Bandeja", for: ["proveedor"] },
+  { to: "/panel/proveedor/perfil", label: "Mi empresa", for: ["proveedor"] },
+  { to: "/panel/admin/verificaciones", label: "Verificaciones", for: ["admin"] },
 ];
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const { user, signOut } = useAuth();
-  const nav = NAV.filter((item) => !(item.guestOnly && user));
+  const nav = NAV.filter((item) => item.for.includes(user?.role ?? "guest"));
 
   // Panel link depends on role
   const panelLink = user
@@ -110,16 +115,31 @@ export function SiteHeader() {
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/ingresar" className="cursor-pointer">
-                  <LogIn className="size-4" /> Ingresar
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/registro" className="cursor-pointer">
-                  <LayoutDashboard className="size-4" /> Crear cuenta
-                </Link>
-              </DropdownMenuItem>
+              {user && panelLink ? (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link to={panelLink} className="cursor-pointer">
+                      <LayoutDashboard className="size-4" /> Mi panel
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => signOut()} className="cursor-pointer">
+                    <LogIn className="size-4" /> Salir
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link to="/ingresar" className="cursor-pointer">
+                      <LogIn className="size-4" /> Ingresar
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/registro" className="cursor-pointer">
+                      <LayoutDashboard className="size-4" /> Crear cuenta
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

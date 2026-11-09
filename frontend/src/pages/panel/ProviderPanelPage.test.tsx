@@ -35,13 +35,13 @@ describe("ProviderPanelPage", () => {
 
     renderAt(<ProviderPanelPage />);
 
-    expect(screen.getByText("Solicitudes disponibles")).toBeInTheDocument();
+    expect(screen.getByText("Panel de proveedor")).toBeInTheDocument();
   });
 
   it("redirige a ingreso cuando no hay sesion", () => {
     renderAt(<ProviderPanelPage />);
 
     expect(screen.getByText("PANTALLA DE INGRESO")).toBeInTheDocument();
-    expect(screen.queryByText("Solicitudes disponibles")).not.toBeInTheDocument();
+    expect(screen.queryByText("Panel de proveedor")).not.toBeInTheDocument();
   });
 });

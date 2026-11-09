@@ -4,25 +4,40 @@ import { SiteHeader } from "./site-header";
 
 beforeEach(() => window.localStorage.clear());
 
-function login(role: "cliente" | "proveedor") {
+function login(role: "cliente" | "proveedor" | "admin") {
   window.localStorage.setItem(
     "hvac-auth-session",
     JSON.stringify({ id: `u-${role}`, email: `${role}@demo.cl`, fullName: "Usuario", role }),
   );
 }
 
-describe("SiteHeader", () => {
-  it("muestra 'Para proveedores' a visitantes sin sesion", () => {
+const nav = () =>
+  Array.from(
+    screen.getByRole("navigation", { name: "Principal" }).querySelectorAll("a"),
+    (a) => a.textContent,
+  );
+
+describe("SiteHeader: navegación según el rol", () => {
+  it("visitante: herramientas de búsqueda y 'Para proveedores'", () => {
     renderWithProviders(<SiteHeader />);
-    expect(screen.getAllByRole("link", { name: "Para proveedores" }).length).toBeGreaterThan(0);
+    expect(nav()).toEqual(["Mapa", "Buscar proveedores", "Asistente IA", "Para proveedores"]);
   });
 
-  for (const role of ["cliente", "proveedor"] as const) {
-    it(`oculta 'Para proveedores' con sesion de ${role}`, () => {
-      login(role);
-      renderWithProviders(<SiteHeader />);
-      expect(screen.queryByRole("link", { name: "Para proveedores" })).not.toBeInTheDocument();
-      expect(screen.getAllByRole("link", { name: "Buscar proveedores" }).length).toBeGreaterThan(0);
-    });
-  }
+  it("cliente: busca y contrata, sin 'Para proveedores'", () => {
+    login("cliente");
+    renderWithProviders(<SiteHeader />);
+    expect(nav()).toEqual(["Mapa", "Buscar proveedores", "Asistente IA"]);
+  });
+
+  it("proveedor: solo sus herramientas (bandeja y su empresa)", () => {
+    login("proveedor");
+    renderWithProviders(<SiteHeader />);
+    expect(nav()).toEqual(["Bandeja", "Mi empresa"]);
+  });
+
+  it("admin: verificaciones y búsqueda", () => {
+    login("admin");
+    renderWithProviders(<SiteHeader />);
+    expect(nav()).toEqual(["Mapa", "Buscar proveedores", "Verificaciones"]);
+  });
 });

@@ -3,15 +3,16 @@ import { motion } from "motion/react";
 import {
   AlertCircle,
   BadgeCheck,
+  Briefcase,
   CheckCircle2,
   Circle,
   Clock,
   Eye,
-  FileText,
   Inbox,
+  MapPin,
   Pencil,
+  Send,
   ShieldCheck,
-  Star,
   XCircle,
 } from "lucide-react";
 import type { ProviderProfile, ProviderVerificationStatus } from "@hvac/shared";
@@ -20,7 +21,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/features/auth";
 import { useServiceRequests } from "@/features/requests/hooks";
-import { useUnreadCount } from "@/features/notifications/hooks";
 import { useMyProviderProfile } from "./provider-hooks";
 
 const STATUS_BADGE: Record<
@@ -58,59 +58,78 @@ const STATUS_BADGE: Record<
   },
 };
 
+const NEXT_STEP: Record<string, string> = {
+  aceptada: "Siguiente paso: marcar en ejecución",
+  en_ejecucion: "Siguiente paso: marcar como completada",
+  completada: "Esperando confirmación del cliente",
+};
+
+/** Panel del proveedor: su bandeja, sus cotizaciones y sus trabajos (no el panel del cliente). */
 export function ProviderDashboard() {
   const { user } = useAuth();
-  const firstName = user?.fullName?.split(" ")[0] ?? "proveedor";
   const { data: requests } = useServiceRequests();
-  const { data: unread = 0 } = useUnreadCount();
   const { data: profile, isLoading: profileLoading } = useMyProviderProfile();
   const status = STATUS_BADGE[profile?.verificationStatus ?? "pendiente"];
+  const name = profile?.legalName ?? user?.fullName ?? "tu empresa";
 
-  const openRequests =
-    requests?.filter((r) => ["abierta", "con_cotizaciones"].includes(r.status)) ?? [];
-  const totalRequests = requests?.length ?? 0;
+  // Mismos grupos que la bandeja (ProviderInboxPage).
+  const all = requests ?? [];
+  const toQuote = all.filter(
+    (r) =>
+      ["abierta", "con_cotizaciones"].includes(r.status) &&
+      r.myQuoteStatus !== "enviada" &&
+      r.myQuoteStatus !== "aceptada",
+  );
+  const quoted = all.filter((r) => r.myQuoteStatus === "enviada");
+  const jobs = all.filter((r) => r.myQuoteStatus === "aceptada");
+  const active = jobs.filter((r) => r.status !== "completada" || !r.clientConfirmedAt);
+  const done = jobs.filter((r) => r.status === "completada");
 
   const metrics = [
     {
-      label: "Solicitudes abiertas",
-      value: String(openRequests.length),
-      hint: "Disponibles para cotizar",
+      label: "Por cotizar",
+      value: toQuote.length,
+      hint: "Solicitudes en tu cobertura",
       icon: Inbox,
     },
     {
-      label: "Total solicitudes",
-      value: String(totalRequests),
-      hint: "En la plataforma",
-      icon: FileText,
+      label: "Cotizaciones enviadas",
+      value: quoted.length,
+      hint: "Esperando respuesta",
+      icon: Send,
     },
     {
-      label: "Notificaciones",
-      value: String(unread),
-      hint: "Sin leer",
-      icon: Star,
+      label: "Trabajos en curso",
+      value: active.length,
+      hint: "Adjudicados a tu empresa",
+      icon: Briefcase,
     },
+    { label: "Completados", value: done.length, hint: "Trabajos terminados", icon: CheckCircle2 },
   ];
 
   return (
     <section className="container-page space-y-8 py-10">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">Hola, {firstName}</h1>
-          <p className="mt-1 text-muted-foreground">
-            Resumen de tu actividad y solicitudes disponibles en el marketplace.
-          </p>
+          <p className="text-sm text-muted-foreground">Panel de proveedor</p>
+          <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold sm:text-3xl">
+            {name}
+            <Badge variant={status.variant}>
+              <status.icon className="size-3" /> {status.label}
+            </Badge>
+          </h1>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button asChild>
+            <Link to="/panel/proveedor/bandeja">
+              <Inbox className="size-4" />
+              Ir a la bandeja
+            </Link>
+          </Button>
           <Button asChild variant="outline">
             <Link to="/panel/proveedor/perfil">
               <Pencil className="size-4" />
               {profile ? "Editar perfil" : "Completar perfil"}
-            </Link>
-          </Button>
-          <Button asChild>
-            <Link to="/panel/proveedor/verificacion">
-              <ShieldCheck className="size-4" />
-              Verificacion
             </Link>
           </Button>
         </div>
@@ -135,7 +154,7 @@ export function ProviderDashboard() {
 
       {!profileLoading && profile !== undefined && <SearchVisibility profile={profile} />}
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map((metric, index) => (
           <motion.div
             key={metric.label}
@@ -159,58 +178,69 @@ export function ProviderDashboard() {
         ))}
       </div>
 
-      {/* Bandeja de solicitudes */}
-      <Card>
-        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <CardTitle>Solicitudes disponibles</CardTitle>
-            <CardDescription>
-              Revisa y envía cotizaciones a solicitudes de clientes.
-            </CardDescription>
-          </div>
-          <Button asChild>
-            <Link to="/panel/proveedor/bandeja">
-              <Inbox className="size-4 mr-1" />
-              Ir a la bandeja
-            </Link>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {openRequests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
-              <Inbox className="size-8 text-muted-foreground" />
-              <p className="font-medium">No hay solicitudes abiertas</p>
-              <p className="text-sm text-muted-foreground">
-                Las nuevas solicitudes de clientes aparecerán aquí.
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Solicitudes nuevas para cotizar</CardTitle>
+            <CardDescription>Clientes de tu zona esperando cotización.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {toQuote.length === 0 ? (
+              <p className="py-4 text-sm text-muted-foreground">
+                No hay solicitudes nuevas. Te avisaremos cuando llegue una.
               </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {openRequests.slice(0, 5).map((req) => (
-                <div
-                  key={req.id}
-                  className="flex items-center justify-between rounded-md border border-border p-3"
-                >
-                  <div>
-                    <p className="text-sm font-medium">
-                      {req.equipment} — {req.commune ?? "Sin ubicación"}
+            ) : (
+              <ul className="space-y-2">
+                {toQuote.slice(0, 5).map((req) => (
+                  <li key={req.id} className="rounded-md border border-border p-3">
+                    <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                      {req.serviceName ?? req.equipment} — {req.commune ?? "Sin ubicación"}
+                      {req.isDirect && <Badge>Directa a tu empresa</Badge>}
                     </p>
-                    <p className="text-xs text-muted-foreground line-clamp-1">{req.description}</p>
-                  </div>
-                  <Badge variant={req.status === "abierta" ? "default" : "warning"}>
-                    {req.status === "abierta" ? "Abierta" : `${req.quotesCount} cotiz.`}
-                  </Badge>
-                </div>
-              ))}
-              {openRequests.length > 5 && (
-                <p className="text-center text-xs text-muted-foreground">
-                  y {openRequests.length - 5} más...
-                </p>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    <p className="line-clamp-1 text-xs text-muted-foreground">
+                      {req.description}
+                      {req.distanceKm != null && ` · ~${req.distanceKm} km`}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Button asChild variant="outline" size="sm" className="mt-4">
+              <Link to="/panel/proveedor/bandeja">Cotizar en la bandeja</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Trabajos en curso</CardTitle>
+            <CardDescription>Solicitudes donde el cliente aceptó tu cotización.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {active.length === 0 ? (
+              <p className="py-4 text-sm text-muted-foreground">
+                Cuando un cliente acepte tu cotización, el trabajo aparecerá aquí.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {active.slice(0, 5).map((req) => (
+                  <li key={req.id}>
+                    <Link
+                      to={`/panel/solicitudes/${req.id}`}
+                      className="block rounded-md border border-border p-3 transition-colors hover:bg-muted/50"
+                    >
+                      <p className="text-sm font-medium">
+                        {req.serviceName ?? req.equipment} — {req.commune ?? "Sin ubicación"}
+                      </p>
+                      <p className="text-xs text-primary">{NEXT_STEP[req.status] ?? req.status}</p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
@@ -243,17 +273,21 @@ export function ProviderDashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Inbox className="size-5 text-primary" />
-              Bandeja de cotizaciones
+              <MapPin className="size-5 text-primary" />
+              Cobertura y disponibilidad
             </CardTitle>
-            <CardDescription>Accede a tu bandeja para cotizar solicitudes.</CardDescription>
+            <CardDescription>
+              {profile
+                ? `${profile.services.length} servicios · hasta ${profile.coverageRadiusKm} km desde ${profile.commune}`
+                : "Define tus servicios y tu zona de atención."}
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">
-              {openRequests.length} solicitudes disponibles
-            </p>
+            <Badge variant={profile?.isAvailable ? "success" : "secondary"}>
+              {profile?.isAvailable ? "Disponible para nuevos trabajos" : "No disponible"}
+            </Badge>
             <Button asChild variant="outline" size="sm">
-              <Link to="/panel/proveedor/bandeja">Ver bandeja</Link>
+              <Link to="/panel/proveedor/perfil">Editar</Link>
             </Button>
           </CardContent>
         </Card>
