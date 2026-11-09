@@ -285,3 +285,37 @@ describe("COT-01 vencimiento", () => {
     }
   });
 });
+
+describe("Solicitud directa a una empresa (desde su perfil)", () => {
+  it("solo la empresa elegida la ve, marcada como directa, y puede cotizarla", async () => {
+    const target = (await verifiedDemoProvider("directa-destino", { commune: "Arica" })).id;
+    // Pedida desde Ñuñoa: fuera de la cobertura de Arica, pero el cliente la eligió.
+    const r = await newRequest(client, { targetProviderId: target });
+    expect(r.targetProviderName).toBe("Proveedor directa-destino");
+
+    const destino = { id: "directa-destino", email: "d@test.cl", role: "proveedor" as const };
+    const inbox = await listRequests(destino);
+    expect(inbox.find((x) => x.id === r.id)?.isDirect).toBe(true);
+    expect((await listRequests(near)).some((x) => x.id === r.id)).toBe(false);
+    expect((await listNotifications(near.id)).some((n) => n.refId === r.id)).toBe(false);
+    expect((await listNotifications(destino.id)).find((n) => n.refId === r.id)?.title).toBe(
+      "Nueva solicitud directa para tu empresa",
+    );
+
+    await expect(createQuote(quoteInput(r.id), near)).rejects.toMatchObject({ status: 403 });
+    await expect(createQuote(quoteInput(r.id), destino)).resolves.toMatchObject({
+      status: "enviada",
+    });
+  });
+
+  it("rechaza empresas sin cuenta o no verificadas", async () => {
+    await expect(newRequest(client, { targetProviderId: "p-calor-central" })).rejects.toMatchObject(
+      {
+        status: 409,
+      },
+    );
+    await expect(newRequest(client, { targetProviderId: "no-existe" })).rejects.toMatchObject({
+      status: 404,
+    });
+  });
+});

@@ -14,7 +14,7 @@ import type { AuthenticatedUser } from "../lib/auth";
 import { getServiceClient } from "../lib/supabase";
 import { isDemoMode } from "../lib/env";
 import { HttpError } from "../lib/http";
-import { distanceMeters } from "../data/demo";
+import { demoProviders, distanceMeters } from "../data/demo";
 import { createNotification } from "./notifications";
 import { listDemoProfiles } from "./provider-profile";
 
@@ -72,6 +72,16 @@ function demoEligible(
   r: DemoRequest,
 ): Array<{ providerId: string; userId: string; meters: number }> {
   if (r.lat == null || r.lng == null) return [];
+  // Solicitud directa: solo la empresa elegida, si esta verificada.
+  if (r.targetProviderId) {
+    const target = listDemoProfiles().find((p) => p.profile.id === r.targetProviderId);
+    if (!target || target.profile.verificationStatus !== "verificado") return [];
+    const base = findCommune(target.profile.commune);
+    const meters = base
+      ? distanceMeters({ lat: base.lat, lng: base.lng }, { lat: r.lat, lng: r.lng })
+      : 0;
+    return [{ providerId: target.profile.id, userId: target.userId, meters }];
+  }
   const result: Array<{ providerId: string; userId: string; meters: number }> = [];
   for (const { userId, profile } of listDemoProfiles()) {
     const base = findCommune(profile.commune);
@@ -129,10 +139,12 @@ function forProvider(
   r: ServiceRequest,
   distanceKm: number | null,
   myQuoteStatus: Quote["status"] | null,
+  isDirect = false,
 ): ServiceRequest {
   const awarded = myQuoteStatus === "aceptada";
   return {
     ...r,
+    isDirect,
     clientId: awarded ? r.clientId : "",
     address: awarded ? r.address : null,
     distanceKm,
@@ -163,6 +175,8 @@ function mapRequestRow(row: Row): ServiceRequest {
     updatedAt: String(row.updated_at ?? row.created_at ?? new Date().toISOString()),
     completedAt: row.completed_at ?? null,
     clientConfirmedAt: row.client_confirmed_at ?? null,
+    targetProviderId: row.target_provider_id ?? null,
+    targetProviderName: row.target?.legal_name ?? null,
   };
 }
 
@@ -231,7 +245,8 @@ async function expireAndAutoConfirm(db: any): Promise<void> {
     .lt("completed_at", new Date(Date.now() - AUTO_CONFIRM_DAYS * DAY_MS).toISOString());
 }
 
-const REQUEST_SELECT = "*, services(name)";
+const REQUEST_SELECT =
+  "*, services(name), target:providers!service_requests_target_provider_id_fkey(legal_name)";
 
 // =============================================================================
 // API del servicio
@@ -266,6 +281,7 @@ export async function listRequests(user: AuthenticatedUser): Promise<ServiceRequ
           demoPublic(r),
           meters == null ? null : Math.round(meters / 100) / 10,
           mine?.status ?? null,
+          r.targetProviderId === provider.id,
         ),
       ];
     });
@@ -283,6 +299,7 @@ export async function listRequests(user: AuthenticatedUser): Promise<ServiceRequ
         mapRequestRow({ ...row, client_id: "", address: null }),
         row.distance_km != null ? Number(row.distance_km) : null,
         row.my_quote_status ?? null,
+        Boolean(row.is_direct),
       ),
     );
   }
@@ -391,6 +408,56 @@ export async function getRequestDetail(
   throw new HttpError("forbidden", "No tienes acceso a esta solicitud", 403);
 }
 
+/**
+ * Solicitud directa: la empresa debe existir, estar verificada y tener una cuenta
+ * que reciba la solicitud. Devuelve su nombre.
+ */
+async function requireDirectTarget(providerId: string): Promise<string> {
+  const db = getServiceClient();
+  let found: { name: string; verified: boolean; hasAccount: boolean } | null = null;
+  if (!db) {
+    requireDemo();
+    const entry = listDemoProfiles().find((p) => p.profile.id === providerId);
+    if (entry) {
+      found = {
+        name: entry.profile.legalName,
+        verified: entry.profile.verificationStatus === "verificado",
+        hasAccount: true,
+      };
+    } else if (demoProviders.some((p) => p.id === providerId || p.slug === providerId)) {
+      // Fichas demo sin cuenta de proveedor detras.
+      const p = demoProviders.find((x) => x.id === providerId || x.slug === providerId)!;
+      found = {
+        name: p.legalName,
+        verified: p.verificationStatus === "verificado",
+        hasAccount: false,
+      };
+    }
+  } else {
+    const { data } = await db
+      .from("providers")
+      .select("legal_name, verification_status, user_id")
+      .eq("id", providerId)
+      .maybeSingle();
+    if (data) {
+      found = {
+        name: String(data.legal_name),
+        verified: data.verification_status === "verificado",
+        hasAccount: Boolean(data.user_id),
+      };
+    }
+  }
+  if (!found) throw new HttpError("not_found", "Empresa no encontrada", 404);
+  if (!found.verified || !found.hasAccount) {
+    throw new HttpError(
+      "provider_unavailable",
+      "Esta empresa todavía no recibe solicitudes en línea. Publica una solicitud general para recibir cotizaciones.",
+      409,
+    );
+  }
+  return found.name;
+}
+
 /** SOL-01 / SOL-02: crea la solicitud y avisa a los proveedores elegibles. */
 export async function createRequest(
   input: ServiceRequestCreateInput,
@@ -400,6 +467,9 @@ export async function createRequest(
   if (!commune) throw new HttpError("validation_error", "Comuna no reconocida", 422);
   const lat = input.lat ?? commune.lat;
   const lng = input.lng ?? commune.lng;
+  const targetName = input.targetProviderId
+    ? await requireDirectTarget(input.targetProviderId)
+    : null;
 
   const db = getServiceClient();
   let created: ServiceRequest;
@@ -426,6 +496,8 @@ export async function createRequest(
       updatedAt: now,
       completedAt: null,
       clientConfirmedAt: null,
+      targetProviderId: input.targetProviderId ?? null,
+      targetProviderName: targetName,
       lat,
       lng,
       quotes: [],
@@ -449,6 +521,7 @@ export async function createRequest(
         address: input.address ?? null,
         photos: input.photos ?? [],
         geom: `SRID=4326;POINT(${lng} ${lat})`,
+        target_provider_id: input.targetProviderId ?? null,
       })
       .select(REQUEST_SELECT)
       .single();
@@ -470,7 +543,7 @@ export async function createRequest(
     notify({
       userId,
       type: "nueva_solicitud",
-      title: "Nueva solicitud cerca de ti",
+      title: targetName ? "Nueva solicitud directa para tu empresa" : "Nueva solicitud cerca de ti",
       body: `${created.serviceName ?? "Servicio HVAC"} en ${created.commune}. Urgencia: ${created.urgency}.`,
       refType: "request",
       refId: created.id,

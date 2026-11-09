@@ -11,6 +11,8 @@ export const serviceRequestCreateSchema = z.object({
   lat: z.number().min(-90).max(90).optional(),
   lng: z.number().min(-180).max(180).optional(),
   photos: z.array(z.string().url()).max(5).default([]),
+  /** Solicitud directa a una empresa (desde su perfil). Sin valor: va a todos los elegibles. */
+  targetProviderId: z.string().trim().min(3).max(100).optional(),
 });
 export type ServiceRequestCreateInput = z.infer<typeof serviceRequestCreateSchema>;
 

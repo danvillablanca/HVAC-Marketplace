@@ -185,6 +185,11 @@ export interface ServiceRequest {
   completedAt?: string | null;
   /** COT-03: confirmacion del cliente (o automatica a los 7 dias). */
   clientConfirmedAt?: string | null;
+  /** Solicitud directa: empresa elegida por el cliente desde su perfil. */
+  targetProviderId?: string | null;
+  targetProviderName?: string | null;
+  /** Vista del proveedor: la solicitud fue dirigida a su empresa. */
+  isDirect?: boolean;
 }
 
 export interface Quote {
