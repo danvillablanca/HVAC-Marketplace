@@ -1,82 +1,90 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders, screen, userEvent, waitFor } from "@/test/render";
 import { LeadForm } from "./lead-form";
 
-function okResponse<T>(data: T) {
-  return {
-    ok: true,
-    status: 200,
-    json: async () => ({ ok: true, data }),
-  } as unknown as Response;
+const hooks = vi.hoisted(() => ({
+  mutate: vi.fn(),
+  state: {
+    isSuccess: false,
+    isError: false,
+    isPending: false,
+    data: undefined as unknown,
+    error: null as unknown,
+  },
+}));
+
+vi.mock("@/features/requests/hooks", () => ({
+  useCreateServiceRequest: () => ({ ...hooks.state, mutate: hooks.mutate }),
+}));
+
+function login(role: "cliente" | "proveedor") {
+  window.localStorage.setItem(
+    "hvac-auth-session",
+    JSON.stringify({ id: `u-${role}`, email: `${role}@demo.cl`, fullName: "U", role }),
+  );
 }
 
-afterEach(() => {
-  vi.unstubAllGlobals();
-  vi.restoreAllMocks();
+beforeEach(() => {
+  window.localStorage.clear();
+  hooks.mutate.mockReset();
+  hooks.state = {
+    isSuccess: false,
+    isError: false,
+    isPending: false,
+    data: undefined,
+    error: null,
+  };
 });
 
-describe("LeadForm", () => {
-  it("no envia si la descripcion es muy corta", async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
-    const user = userEvent.setup();
-
+describe("LeadForm (solicitud directa)", () => {
+  it("sin sesión invita a ingresar como cliente", () => {
     renderWithProviders(<LeadForm providerId="p-clima-andes" />);
-
-    const submit = screen.getByRole("button", { name: /enviar solicitud/i });
-    expect(submit).toBeDisabled();
-
-    await user.type(screen.getByLabelText("Describe tu requerimiento"), "corto");
-    expect(submit).toBeDisabled();
-    await user.click(submit);
-
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(screen.getByRole("link", { name: "ingresa" })).toHaveAttribute("href", "/ingresar");
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
-  it("envia el lead con los valores del formulario", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(okResponse({ id: "lead-1" }));
-    vi.stubGlobal("fetch", fetchMock);
-    const user = userEvent.setup();
+  it("un proveedor no puede pedir cotizaciones", () => {
+    login("proveedor");
+    renderWithProviders(<LeadForm providerId="p-clima-andes" />);
+    expect(screen.getByText(/Solo las cuentas de cliente/)).toBeInTheDocument();
+  });
 
+  it("crea una solicitud dirigida a la empresa con comuna y urgencia", async () => {
+    login("cliente");
+    const user = userEvent.setup();
     renderWithProviders(<LeadForm providerId="p-clima-andes" providerName="Clima Andes SpA" />);
 
+    const submit = screen.getByRole("button", { name: /Enviar solicitud a Clima Andes SpA/ });
+    expect(submit).toBeDisabled();
+
     await user.type(
       screen.getByLabelText("Describe tu requerimiento"),
-      "Necesito instalar un split inverter",
+      "Mantención de dos equipos split en oficina",
     );
     await user.selectOptions(screen.getByLabelText("Urgencia"), "alta");
-    await user.selectOptions(screen.getByLabelText("Contacto preferido"), "correo");
-    await user.click(screen.getByRole("button", { name: /enviar solicitud/i }));
+    await user.selectOptions(screen.getByLabelText("Comuna"), "Providencia");
+    await user.click(submit);
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
-    const [url, init] = fetchMock.mock.calls[0] ?? [];
-    expect(String(url)).toContain("/api/leads");
-    expect((init as RequestInit).method).toBe("POST");
-    expect(JSON.parse(String((init as RequestInit).body))).toEqual({
-      providerId: "p-clima-andes",
-      description: "Necesito instalar un split inverter",
-      urgency: "alta",
-      preferredContact: "correo",
-    });
-
-    expect(await screen.findByText("Solicitud enviada")).toBeInTheDocument();
-    expect(screen.getByText(/Clima Andes SpA te contactara pronto por correo/)).toBeInTheDocument();
+    await waitFor(() =>
+      expect(hooks.mutate).toHaveBeenCalledWith({
+        targetProviderId: "p-clima-andes",
+        equipment: "otro",
+        description: "Mantención de dos equipos split en oficina",
+        urgency: "alta",
+        commune: "Providencia",
+        photos: [],
+      }),
+    );
   });
 
-  it("muestra el mensaje de error cuando la API falla", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network down")));
-    const user = userEvent.setup();
-
-    renderWithProviders(<LeadForm providerId="p-clima-andes" />);
-
-    await user.type(
-      screen.getByLabelText("Describe tu requerimiento"),
-      "Necesito una mantencion programada",
-    );
-    await user.click(screen.getByRole("button", { name: /enviar solicitud/i }));
-
-    expect(
-      await screen.findByText("No pudimos enviar la solicitud. Intenta nuevamente."),
-    ).toBeInTheDocument();
+  it("muestra el error de la API (empresa que aún no recibe solicitudes)", () => {
+    login("cliente");
+    hooks.state = {
+      ...hooks.state,
+      isError: true,
+      error: new Error("Esta empresa todavía no recibe solicitudes en línea."),
+    };
+    renderWithProviders(<LeadForm providerId="p-calor-central" />);
+    expect(screen.getByRole("alert")).toHaveTextContent("todavía no recibe solicitudes");
   });
 });

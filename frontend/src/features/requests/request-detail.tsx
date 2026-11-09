@@ -103,6 +103,8 @@ export function RequestDetail({ requestId }: RequestDetailProps) {
               </CardTitle>
               <CardDescription className="mt-1">
                 Creada el {formatDate(detail.createdAt)} · Equipo: {EQUIPMENT[detail.equipment]}
+                {detail.targetProviderName && ` · Solicitud directa a ${detail.targetProviderName}`}
+                {detail.isDirect && " · Solicitud directa a tu empresa"}
               </CardDescription>
             </div>
             <Badge>{STATUS_LABELS[detail.status] ?? detail.status}</Badge>

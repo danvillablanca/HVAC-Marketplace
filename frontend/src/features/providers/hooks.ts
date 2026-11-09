@@ -1,7 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { nearbySearchSchema } from "@hvac/shared";
 import type {
-  LeadCreateInput,
   NearbySearchInput,
   NearbySearchParams,
   ProviderSearchResult,
@@ -114,13 +113,6 @@ export function useProviderReviews(providerId: string | undefined) {
 }
 
 /** Crear una solicitud (lead) de servicio. */
-export function useCreateLead() {
-  return useMutation({
-    mutationFn: (input: LeadCreateInput) =>
-      apiFetch<{ id: string }>("/api/leads", { method: "POST", body: input }),
-  });
-}
-
 /** Crear una resena. */
 export function useCreateReview() {
   return useMutation({

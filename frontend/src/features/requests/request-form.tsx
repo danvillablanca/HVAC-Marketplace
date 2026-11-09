@@ -126,6 +126,11 @@ export function RequestForm({ onSuccess, defaultServiceId }: RequestFormProps) {
     <Card>
       <CardHeader>
         <CardTitle>Nueva solicitud de servicio</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Tu solicitud llega a los proveedores verificados que ofrecen el servicio y atienden tu
+          comuna; ellos te envían cotizaciones para comparar. Si ya elegiste una empresa, pídele
+          cotización directamente desde su perfil.
+        </p>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} noValidate className="space-y-4">

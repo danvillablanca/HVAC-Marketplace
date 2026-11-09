@@ -123,6 +123,11 @@ function RequestCard({ request, showLink }: { request: ServiceRequest; showLink:
                 <span className="font-normal text-muted-foreground"> — {request.commune}</span>
               )}
             </CardTitle>
+            {request.targetProviderName && (
+              <p className="text-xs font-medium text-primary">
+                Solicitud directa a {request.targetProviderName}
+              </p>
+            )}
             <p className="line-clamp-2 text-sm text-muted-foreground">{request.description}</p>
           </div>
           <Badge variant={status.variant}>{status.label}</Badge>

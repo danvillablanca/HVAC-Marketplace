@@ -35,6 +35,11 @@ function RequestCard({
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-base">
             {req.serviceName ?? req.equipment} — {req.commune ?? "Sin ubicación"}
+            {req.isDirect && (
+              <Badge variant="default" className="ml-2 align-middle">
+                Directa a tu empresa
+              </Badge>
+            )}
           </CardTitle>
           {req.myQuoteStatus === "aceptada" ? (
             <Badge variant="success">{STATUS_LABELS[req.status]}</Badge>

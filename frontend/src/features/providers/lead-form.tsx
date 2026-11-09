@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { CheckCircle2, Loader2 } from "lucide-react";
-import type { LeadCreateInput } from "@hvac/shared";
-import { useCreateLead } from "@/features/providers/hooks";
+import { COMMUNES, type UrgencyLevel } from "@hvac/shared";
+import { useAuth } from "@/features/auth";
+import { useCreateServiceRequest } from "@/features/requests/hooks";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -14,21 +16,56 @@ export interface LeadFormProps {
   className?: string;
 }
 
-/** Formulario de solicitud de cotizacion/contacto (crea un lead). */
+const REGIONS = [...new Set(COMMUNES.map((c) => c.region))];
+
+/**
+ * Solicitud directa a una empresa (desde su perfil). Crea una solicitud de servicio
+ * dirigida solo a este proveedor: le llega a su bandeja y responde con una cotizacion.
+ */
 export function LeadForm({ providerId, providerName, className }: LeadFormProps) {
+  const { user } = useAuth();
   const [description, setDescription] = useState("");
-  const [urgency, setUrgency] = useState<LeadCreateInput["urgency"]>("media");
-  const [preferredContact, setPreferredContact] =
-    useState<LeadCreateInput["preferredContact"]>("whatsapp");
-  const createLead = useCreateLead();
+  const [urgency, setUrgency] = useState<UrgencyLevel>("media");
+  const [commune, setCommune] = useState("");
+  const create = useCreateServiceRequest();
+  const valid = description.trim().length >= 20 && commune !== "";
+
+  if (!user || user.role !== "cliente") {
+    return (
+      <p className={cn("text-sm text-muted-foreground", className)}>
+        {user
+          ? "Solo las cuentas de cliente pueden pedir cotizaciones."
+          : "Para pedir una cotización a esta empresa, "}
+        {!user && (
+          <>
+            <Link to="/ingresar" className="font-medium text-primary hover:underline">
+              ingresa
+            </Link>{" "}
+            o{" "}
+            <Link to="/registro" className="font-medium text-primary hover:underline">
+              crea una cuenta de cliente
+            </Link>
+            .
+          </>
+        )}
+      </p>
+    );
+  }
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (description.trim().length < 10) return;
-    createLead.mutate({ providerId, description: description.trim(), urgency, preferredContact });
+    if (!valid) return;
+    create.mutate({
+      targetProviderId: providerId,
+      equipment: "otro",
+      description: description.trim(),
+      urgency,
+      commune,
+      photos: [],
+    });
   };
 
-  if (createLead.isSuccess) {
+  if (create.isSuccess) {
     return (
       <div
         role="status"
@@ -42,7 +79,13 @@ export function LeadForm({ providerId, providerName, className }: LeadFormProps)
           Solicitud enviada
         </p>
         <p className="mt-1 text-muted-foreground">
-          {providerName ? `${providerName} te` : "Te"} contactara pronto por {preferredContact}.
+          {providerName ?? "La empresa"} recibió tu solicitud y te responderá con una cotización.{" "}
+          <Link
+            to={`/panel/solicitudes/${create.data.id}`}
+            className="font-medium text-primary hover:underline"
+          >
+            Ver mi solicitud
+          </Link>
         </p>
       </div>
     );
@@ -56,10 +99,10 @@ export function LeadForm({ providerId, providerName, className }: LeadFormProps)
           id={`lead-description-${providerId}`}
           value={description}
           onChange={(event) => setDescription(event.target.value)}
-          minLength={10}
-          maxLength={2000}
+          minLength={20}
+          maxLength={1000}
           required
-          placeholder="Equipo, metraje, urgencia, comuna..."
+          placeholder="Equipo, metraje, qué falla o qué necesitas (mínimo 20 caracteres)..."
           className="mt-1.5"
         />
       </div>
@@ -69,40 +112,48 @@ export function LeadForm({ providerId, providerName, className }: LeadFormProps)
           <Select
             id={`lead-urgency-${providerId}`}
             value={urgency}
-            onChange={(event) => setUrgency(event.target.value as LeadCreateInput["urgency"])}
+            onChange={(event) => setUrgency(event.target.value as UrgencyLevel)}
             className="mt-1.5"
           >
             <option value="baja">Baja</option>
             <option value="media">Media</option>
             <option value="alta">Alta</option>
+            <option value="urgente">Urgente</option>
           </Select>
         </div>
         <div>
-          <Label htmlFor={`lead-contact-${providerId}`}>Contacto preferido</Label>
+          <Label htmlFor={`lead-commune-${providerId}`}>Comuna</Label>
           <Select
-            id={`lead-contact-${providerId}`}
-            value={preferredContact}
-            onChange={(event) =>
-              setPreferredContact(event.target.value as LeadCreateInput["preferredContact"])
-            }
+            id={`lead-commune-${providerId}`}
+            value={commune}
+            onChange={(event) => setCommune(event.target.value)}
             className="mt-1.5"
           >
-            <option value="whatsapp">WhatsApp</option>
-            <option value="telefono">Telefono</option>
-            <option value="correo">Correo</option>
+            <option value="">Selecciona tu comuna</option>
+            {REGIONS.map((region) => (
+              <optgroup key={region} label={region}>
+                {COMMUNES.filter((c) => c.region === region).map((c) => (
+                  <option key={c.name} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
           </Select>
         </div>
       </div>
 
-      {createLead.isError && (
+      {create.isError && (
         <p className="text-sm text-destructive" role="alert">
-          No pudimos enviar la solicitud. Intenta nuevamente.
+          {create.error instanceof Error
+            ? create.error.message
+            : "No pudimos enviar la solicitud. Intenta nuevamente."}
         </p>
       )}
 
-      <Button type="submit" disabled={description.trim().length < 10 || createLead.isPending}>
-        {createLead.isPending && <Loader2 className="size-4 animate-spin" />}
-        Enviar solicitud
+      <Button type="submit" disabled={!valid || create.isPending}>
+        {create.isPending && <Loader2 className="size-4 animate-spin" />}
+        Enviar solicitud a {providerName ?? "esta empresa"}
       </Button>
     </form>
   );

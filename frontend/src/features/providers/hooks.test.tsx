@@ -2,21 +2,9 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { act, createTestQueryClient, renderHook, waitFor } from "@/test/render";
-import type {
-  LeadCreateInput,
-  NearbySearchInput,
-  ProviderSummary,
-  Review,
-  ReviewCreateInput,
-} from "@hvac/shared";
+import type { NearbySearchInput, ProviderSummary, Review, ReviewCreateInput } from "@hvac/shared";
 import { DEMO_REVIEWS } from "@/data/providers";
-import {
-  useCreateLead,
-  useCreateReview,
-  useNearbyProviders,
-  useProvider,
-  useProviderReviews,
-} from "./hooks";
+import { useCreateReview, useNearbyProviders, useProvider, useProviderReviews } from "./hooks";
 
 function okResponse<T>(data: T) {
   return {
@@ -254,43 +242,6 @@ describe("useProviderReviews", () => {
     const { result: unknown } = renderHookWithClient(() => useProviderReviews("p-desconocido"));
     await waitFor(() => expect(unknown.current.isSuccess).toBe(true));
     expect(unknown.current.data).toEqual([]);
-  });
-});
-
-describe("useCreateLead", () => {
-  const input: LeadCreateInput = {
-    providerId: "p-clima-andes",
-    description: "Necesito instalar un split en mi oficina",
-    urgency: "alta",
-    preferredContact: "whatsapp",
-  };
-
-  it("publica el lead en la API", async () => {
-    const fetchMock = useStubbedFetch(async () => okResponse({ id: "lead-1" }));
-    const { result } = renderHookWithClient(() => useCreateLead());
-
-    await act(async () => {
-      await result.current.mutateAsync(input);
-    });
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0] ?? [];
-    expect(String(url)).toContain("/api/leads");
-    expect((init as RequestInit).method).toBe("POST");
-    expect(JSON.parse(String((init as RequestInit).body))).toEqual(input);
-  });
-
-  it("expone el error cuando la API falla", async () => {
-    useStubbedFetch(async () => {
-      throw new Error("network down");
-    });
-    const { result } = renderHookWithClient(() => useCreateLead());
-
-    await act(async () => {
-      await expect(result.current.mutateAsync(input)).rejects.toThrow();
-    });
-
-    await waitFor(() => expect(result.current.isError).toBe(true));
   });
 });
 
