@@ -82,6 +82,18 @@ Guía paso a paso de todos los flujos que puedes verificar en **HVAC Connect** c
 
 ---
 
+## Flujo 4b — Cliente: pedir cotización a una empresa específica
+
+| Paso | Acción | Resultado esperado |
+| ---- | ------ | ------------------ |
+| 1 | En el perfil de una empresa (`/proveedor/:id`) o su modal, "Pedir cotización" | Sin sesión de cliente pide ingresar. |
+| 2 | Describir el requerimiento (20+ caracteres), urgencia y comuna; enviar | "Solicitud enviada" con enlace a la solicitud; en "Mis solicitudes" figura "Solicitud directa a …". |
+| 3 | Entrar como esa empresa | La solicitud aparece en su panel y bandeja con "Directa a tu empresa" y notificación; ningún otro proveedor la ve. |
+
+> Si la empresa no está verificada o no tiene cuenta en la plataforma, se informa y se sugiere publicar una solicitud general (que llega a todos los proveedores elegibles, no a los administradores).
+
+---
+
 ## Flujo 5 — Proveedor: bandeja y cotización
 
 **Requisito:** estar logueado como `proveedor@demo.cl` (verificado).

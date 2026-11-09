@@ -208,3 +208,23 @@
 - Scripts de verificación contra Supabase real movidos a [`tests/real/`](../../tests/real/README.md).
 - Supabase local detenido (sin contenedores Docker activos).
 
+---
+
+## Ajustes del panel del proveedor (observaciones del cliente) — 09/11/2026
+
+**Rama:** `feature/proveedor-panel`
+
+### Observaciones
+1. Cuando un cliente pedía cotización a una empresa desde su perfil, la empresa no la veía.
+2. Duda: ¿la solicitud general es para los administradores?
+3. El panel del proveedor debía reflejar sus propias funcionalidades, no las del cliente.
+
+### Lo hecho
+- **(1) D-34:** el formulario del perfil creaba un `lead` que nadie leía. Ahora crea una **solicitud directa** (`service_request` con `target_provider_id`, migración `0012`): solo esa empresa es elegible (si está verificada y tiene cuenta), le llega a su bandeja marcada "Directa a tu empresa", con notificación, y sigue el mismo ciclo de cotización y chat. Empresas sin cuenta o sin verificar responden 409 con un mensaje que sugiere la solicitud general. El botón del perfil pasó de "Agendar / Contactar" a "Pedir cotización".
+- **(2)** La solicitud general **no** es para los administradores: llega a todos los proveedores elegibles (RN-03). Se explica en el formulario de nueva solicitud.
+- **(3) D-35:** panel propio del proveedor (empresa y estado de verificación, por cotizar, cotizaciones enviadas, trabajos en curso con su siguiente paso, completados, cobertura y disponibilidad) y **navbar por rol** (proveedor: Bandeja y Mi empresa; cliente: Mapa, Buscar, Asistente; admin: Verificaciones, Mapa, Buscar). D-36 y D-37 corregidos de paso.
+- Verificación: unit, E2E demo (incluye solicitud directa) y recorrido contra Supabase local `tests/real/proveedor-panel.cjs` (8/8).
+
+### Pendiente relacionado
+- La tabla `leads` y `/api/leads` quedan sin uso en la UI (prototipo); se pueden eliminar cuando el equipo lo decida.
+

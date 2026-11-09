@@ -112,6 +112,10 @@
 | D-31 | Baja | El contador de los clústeres del mapa no cargaba sus fuentes (404) | El estilo usado no tenía glifos para la fuente pedida | Estilo raster OSM con `glyphs` y `text-font` explícitos | Corregido | 02/11/2026 | Bloque D |
 | D-32 | Media | El primer mensaje del cliente podía fallar ("Ese proveedor no ha cotizado") si se enviaba apenas cargaba el chat | El hilo activo se fijaba en un `useEffect` después del primer render | Hilo activo derivado de los datos, sin efecto (detectado por E2E) | Corregido | 03/11/2026 | b925164 |
 | D-33 | Baja | Tests de formularios largos fallaban por tiempo en equipos cargados | Límite de 5 s por test con `userEvent` | `testTimeout` de 15 s en el frontend | Corregido | 03/11/2026 | Bloque F |
+| D-34 | Alta | La solicitud que el cliente enviaba desde el perfil de una empresa nunca le llegaba (reportado por el cliente) | El formulario creaba un `lead` del prototipo, que ninguna pantalla del proveedor lee | Solicitud directa: `service_request` con `target_provider_id` (migración 0012) que reutiliza bandeja, cotización, chat y notificaciones | Corregido | 09/11/2026 | feature/proveedor-panel |
+| D-35 | Media | El panel del proveedor se parecía al del cliente y el navbar le ofrecía herramientas de cliente (reportado por el cliente) | Un solo diseño y menú para todos los roles | Panel propio (por cotizar, cotizaciones, trabajos, cobertura) y navbar por rol | Corregido | 09/11/2026 | feature/proveedor-panel |
+| D-36 | Baja | Con sesión iniciada, el menú móvil seguía ofreciendo "Ingresar" y "Crear cuenta" | El menú no consideraba la sesión | "Mi panel" y "Salir" con sesión | Corregido | 09/11/2026 | feature/proveedor-panel |
+| D-37 | Baja | El panel mostraba "Sin verificar" por un instante a proveedores verificados | La insignia usaba el estado por defecto mientras cargaba el perfil | Insignia solo cuando el perfil terminó de cargar (detectado en verificación real) | Corregido | 09/11/2026 | feature/proveedor-panel |
 
 ## 5. URL de producción y credenciales demo
 

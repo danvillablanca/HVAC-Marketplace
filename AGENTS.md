@@ -7,7 +7,7 @@ mantienen la consistencia entre funcionalidades**.
 
 Documentos relacionados (mantenlos al día al cerrar cada bloque):
 
-- [`docs/entregables/E3-estado-implementacion.md`](docs/entregables/E3-estado-implementacion.md): estado de cada REQ, caso de prueba PR-xxx y tabla de defectos D-01…D-33.
+- [`docs/entregables/E3-estado-implementacion.md`](docs/entregables/E3-estado-implementacion.md): estado de cada REQ, caso de prueba PR-xxx y tabla de defectos D-01…D-37.
 - [`docs/entregables/E3-bitacora.md`](docs/entregables/E3-bitacora.md): qué se hizo, problemas y solución en cada bloque.
 - [`docs/entregables/E3-plan-implementacion.md`](docs/entregables/E3-plan-implementacion.md): plan original de la E3.
 - [`docs/guias/flujos-funcionales.md`](docs/guias/flujos-funcionales.md): flujos de usuario paso a paso (se usan para probar).
@@ -63,7 +63,7 @@ Todo lo de abajo está integrado en `develop`. Detalle por requerimiento en `E3-
 | **H — Pruebas Sprint 1 y 2** | ⏳ **Pendiente** | Ver §5. |
 | Sprint 3 (VAL, IA-03, ADM) | ⏳ Pendiente | Fuera del alcance de la E3 actual. |
 
-Verificación hecha en cada bloque: unit (vitest), pgTAP, E2E demo y un recorrido contra Supabase real. Defectos D-01…D-33 están **todos corregidos**.
+Verificación hecha en cada bloque: unit (vitest), pgTAP, E2E demo y un recorrido contra Supabase real. Defectos D-01…D-37 están **todos corregidos**.
 
 ## 4. Decisiones que deben mantenerse (consistencia)
 
@@ -86,6 +86,7 @@ Verificación hecha en cada bloque: unit (vitest), pgTAP, E2E demo y un recorrid
 ### 4.4 Reglas de negocio implementadas
 - **Elegibilidad (RN-03)**: una única definición, `eligible_providers_for_request` (verificado + disponible + ofrece el servicio + la solicitud cae en su `coverage_radius_km`). En demo, `demoEligible` replica la regla. Notificación `nueva_solicitud` a cada elegible.
 - **Búsqueda**: `nearby_providers` solo muestra **verificados** (VER-03) y exige que el cliente esté dentro de `least(radio buscado, cobertura del proveedor)`. Orden y paginación en el servidor (`limit` 10, `total_count`). Radio por defecto 10 km.
+- **Solicitud directa** (migración 0012): pedir cotización desde el perfil de una empresa crea una `service_request` con `target_provider_id`. Solo esa empresa es elegible (verificada y con cuenta; sin exigir cobertura ni servicio) y sigue el mismo ciclo que la general. **No usar `leads`/`/api/leads`**: es del prototipo y ninguna pantalla lo lee. La solicitud general va a los proveedores elegibles, no a los administradores.
 - **Ubicación**: catálogo `communes` (migración 0006) espejado en `shared/src/utils/communes.ts` (`COMMUNES`). Sin geolocalización se usa el centroide de la comuna (búsqueda y `geom` de solicitudes vía trigger).
 - **Privacidad**: antes de adjudicarse, el proveedor ve solo comuna y distancia (`provider_inbox`, sin dirección ni cliente). El contacto del proveedor se muestra solo al admin, al propio proveedor o al cliente con cotización aceptada (RN-10, `canSeeContact`).
 - **Estados de solicitud**: `abierta` → `con_cotizaciones` (automático con la 1.ª cotización) → `aceptada` (`accept_quote`, rechaza el resto, RN-05) → `en_ejecucion` → `completada` (solo el proveedor adjudicado) → confirmación del cliente o **automática a los 7 días, evaluada de forma perezosa** al leer (`client_confirmed_at`, sin `pg_cron`). Cancelar: solo el cliente, en `abierta`/`con_cotizaciones`, motivo opcional.
@@ -97,7 +98,8 @@ Verificación hecha en cada bloque: unit (vitest), pgTAP, E2E demo y un recorrid
 - **Auth**: login por `POST /api/auth/login` (bloqueo de 5 fallos en 15 min, regla compartida en `shared/src/utils/lockout.ts`); expiración tras 7 días sin actividad; Google oculto salvo `VITE_GOOGLE_AUTH_ENABLED=true`.
 
 ### 4.5 UI
-- "Para proveedores" solo se muestra a visitantes sin sesión.
+- **Navbar por rol** (`site-header.tsx`, campo `for`): visitante y cliente ven Mapa, Buscar y Asistente ("Para proveedores" solo visitantes); proveedor ve Bandeja y Mi empresa; admin ve Verificaciones, Mapa y Buscar.
+- **Panel del proveedor ≠ panel del cliente**: el del proveedor muestra su empresa, por cotizar, cotizaciones enviadas, trabajos en curso y completados (mismos grupos que la bandeja). No reutilizar componentes del panel del cliente para el proveedor.
 - El panel del proveedor muestra el estado real de verificación y la tarjeta "¿Por qué no apareces en la búsqueda?".
 - Textos en español de Chile, CLP con `formatCLP`, fechas `dd-mm-aaaa`.
 
@@ -126,7 +128,7 @@ Verificación hecha en cada bloque: unit (vitest), pgTAP, E2E demo y un recorrid
 - Un bloque por rama `feature/<bloque>`; cada bloque cierra con: tests (unit + pgTAP + E2E demo), recorrido contra Supabase real, actualización de `E3-estado-implementacion.md` (REQ y defectos), `E3-bitacora.md` y `flujos-funcionales.md`, y **CI verde**.
 - Commits convencionales en español (`feat(api): ...`, `fix(ui): ...`, `docs: ...`, `test(db): ...`).
 - **No hacer push sin que lint, typecheck, test y build pasen** (revisar los códigos de salida, no solo la salida filtrada).
-- Migraciones nuevas: siguiente número disponible (la última es `0011_messaging.sql`); nunca editar una migración ya integrada en `develop`.
+- Migraciones nuevas: siguiente número disponible (la última es `0012_direct_requests.sql`); nunca editar una migración ya integrada en `develop`.
 
 ## 7. Problemas conocidos del entorno
 - **Windows + CRLF**: `core.autocrlf=true`; Prettier usa `endOfLine: auto`. No cambiarlo.

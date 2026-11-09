@@ -11,6 +11,7 @@ seed, y algunos consultan la base directamente con `psql` dentro del contenedor.
 | `bloque-d.cjs` | Búsqueda: radio por defecto, comuna, filtros, paginación y teselas OSM del mapa. |
 | `bloque-e.cjs` | Ciclo completo de una solicitud: cotizar, comparar, aceptar, ejecutar, confirmar, cancelar. |
 | `bloque-f.cjs` | Chat y campana en vivo con dos navegadores (latencia < 2 s) y correos. |
+| `proveedor-panel.cjs` | Solicitud directa desde el perfil de una empresa, panel y navbar del proveedor. |
 
 ## Cómo correrlos
 
