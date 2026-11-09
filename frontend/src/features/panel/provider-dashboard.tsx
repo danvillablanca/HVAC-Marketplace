@@ -114,9 +114,12 @@ export function ProviderDashboard() {
           <p className="text-sm text-muted-foreground">Panel de proveedor</p>
           <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold sm:text-3xl">
             {name}
-            <Badge variant={status.variant}>
-              <status.icon className="size-3" /> {status.label}
-            </Badge>
+            {/* Sin badge mientras carga: evita mostrar "Sin verificar" por un instante. */}
+            {!profileLoading && (
+              <Badge variant={status.variant}>
+                <status.icon className="size-3" /> {status.label}
+              </Badge>
+            )}
           </h1>
         </div>
         <div className="flex flex-wrap gap-2">

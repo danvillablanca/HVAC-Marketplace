@@ -81,6 +81,7 @@ test("solicitud directa desde el perfil de una empresa llega a su bandeja", asyn
 
   await loginAsDemo(page, "cliente");
   await page.goto("/proveedor/p-hogar-fresco");
+  await page.getByRole("button", { name: "Pedir cotización" }).click();
   await page.getByLabel("Describe tu requerimiento").fill(`Necesito mantención de split ${ref}`);
   await page.getByLabel("Comuna").selectOption("Macul");
   await page.getByRole("button", { name: /Enviar solicitud a/ }).click();

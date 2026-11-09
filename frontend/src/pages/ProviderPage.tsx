@@ -208,7 +208,7 @@ export default function ProviderPage() {
             <div className="mt-3 flex flex-col gap-2">
               <Button type="button" onClick={() => setContactOpen(true)}>
                 <CalendarClock className="size-4" />
-                Agendar / Contactar
+                Pedir cotización
               </Button>
               {provider.contactHidden && (
                 <p className="text-sm text-muted-foreground">
@@ -272,9 +272,9 @@ export default function ProviderPage() {
       <Dialog open={contactOpen} onOpenChange={setContactOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Contactar a {provider.legalName}</DialogTitle>
+            <DialogTitle>Pedir cotización a {provider.legalName}</DialogTitle>
             <DialogDescription>
-              Cuentanos que necesitas y el proveedor te contactara.
+              Tu solicitud le llega solo a esta empresa, que te responderá con una cotización.
             </DialogDescription>
           </DialogHeader>
           <LeadForm providerId={provider.id} providerName={provider.legalName} />
