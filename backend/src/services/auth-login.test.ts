@@ -70,4 +70,15 @@ describe("auth-login", () => {
       lockoutMinutesLeft([fail(LOCKOUT_WINDOW_MS - 30000), ...fiveFails.slice(0, 4)], now),
     ).toBe(1);
   });
+
+  it("informa cuando falta confirmar el correo (Supabase Cloud)", async () => {
+    signInWithPassword.mockResolvedValue({
+      data: { session: null },
+      error: { code: "email_not_confirmed", message: "Email not confirmed" },
+    });
+    await expect(login("nuevo@test.cl", "clave1234")).rejects.toMatchObject({
+      status: 403,
+      code: "email_not_confirmed",
+    });
+  });
 });

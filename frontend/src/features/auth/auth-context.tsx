@@ -37,7 +37,8 @@ export interface AuthContextValue {
   /** Hay login con Google configurado (REQ-AUT-06). */
   googleEnabled: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (input: RegisterInput) => Promise<void>;
+  /** "confirm_email": la cuenta se creo pero falta confirmar el correo (Supabase Cloud). */
+  signUp: (input: RegisterInput) => Promise<"ok" | "confirm_email">;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
@@ -329,12 +330,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         touchActivity();
         writeJson(SESSION_KEY, next);
         setUser(next);
-        return;
+        return "ok";
       }
       const { data, error } = await supabase.auth.signUp({
         email: input.email,
         password: input.password,
         options: {
+          emailRedirectTo: `${window.location.origin}/ingresar`,
           data: {
             fullName: input.fullName,
             role: input.role,
@@ -345,11 +347,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
       if (error) throw new Error(error.message);
-      const created = data.session?.user ?? data.user;
-      if (created) {
-        touchActivity();
-        setUser(await loadProfile(supabase, created));
-      }
+      // Con confirmacion de correo activa (Supabase Cloud) no hay sesion hasta confirmar.
+      if (!data.session) return "confirm_email";
+      touchActivity();
+      setUser(await loadProfile(supabase, data.session.user));
+      return "ok";
     },
     [supabase],
   );

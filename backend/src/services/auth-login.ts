@@ -70,6 +70,14 @@ export async function login(rawEmail: string, password: string): Promise<LoginSe
   }
 
   const { data, error } = await auth.auth.signInWithPassword({ email, password });
+  // Supabase Cloud exige confirmar el correo: se informa en vez del mensaje generico.
+  if (error?.code === "email_not_confirmed") {
+    throw new HttpError(
+      "email_not_confirmed",
+      "Confirma tu correo antes de ingresar: revisa el enlace que te enviamos.",
+      403,
+    );
+  }
   if (error || !data?.session) {
     await recordAttempt(email, false);
     throw new HttpError("invalid_credentials", INVALID_CREDENTIALS, 401);

@@ -232,4 +232,17 @@ describe("AuthForm (cuentas, Bloque B)", () => {
     await user.click(screen.getByRole("button", { name: "Continuar con Google" }));
     expect(signInWithGoogle).toHaveBeenCalledTimes(1);
   });
+
+  it("con confirmacion de correo activa muestra 'Revisa tu correo'", async () => {
+    authMocks.signUp.mockResolvedValue("confirm_email");
+    const user = userEvent.setup();
+    renderWithProviders(<AuthForm mode="register" />);
+    await user.type(screen.getByLabelText("Nombre completo"), "Cliente Nube");
+    await user.type(screen.getByLabelText("Correo electronico"), "nube@test.cl");
+    await user.type(screen.getByLabelText("Contrasena"), "password1");
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
+    expect(await screen.findByText("Revisa tu correo")).toBeInTheDocument();
+    expect(screen.getByText("nube@test.cl")).toBeInTheDocument();
+  });
 });

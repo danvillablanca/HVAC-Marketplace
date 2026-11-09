@@ -88,6 +88,7 @@ export function AuthForm({ mode, redirectTo, className }: AuthFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [confirmEmail, setConfirmEmail] = useState<string | null>(null);
 
   useEffect(() => {
     // Con sesion activa (submit o regreso desde Google) se va directo al panel.
@@ -156,7 +157,8 @@ export function AuthForm({ mode, redirectTo, className }: AuthFormProps) {
     setErrors({});
     setSubmitting(true);
     try {
-      await signUp(parsed.data as RegisterInput);
+      const result = await signUp(parsed.data as RegisterInput);
+      if (result === "confirm_email") setConfirmEmail(parsed.data.email);
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Ocurrio un error inesperado.");
     } finally {
@@ -165,6 +167,21 @@ export function AuthForm({ mode, redirectTo, className }: AuthFormProps) {
   }
 
   const isRegister = mode === "register";
+
+  if (confirmEmail) {
+    return (
+      <div role="status" className={cn("space-y-3 text-sm", className)}>
+        <p className="font-semibold">Revisa tu correo</p>
+        <p className="text-muted-foreground">
+          Te enviamos un enlace a <strong>{confirmEmail}</strong> para confirmar tu cuenta. Después
+          de confirmarla, ingresa con tu correo y contraseña.
+        </p>
+        <Link to="/ingresar" className="font-medium text-primary hover:underline">
+          Ir a ingresar
+        </Link>
+      </div>
+    );
+  }
 
   async function handleGoogle() {
     setFormError(null);
