@@ -27,8 +27,8 @@ test.describe("Paneles", () => {
     await loginAsDemo(page, "proveedor");
     await page.goto("/panel/proveedor");
 
-    await expect(page.getByRole("heading", { name: "Hola, Proveedor" })).toBeVisible();
-    await expect(page.getByText("Solicitudes disponibles", { exact: true })).toBeVisible();
+    await expect(page.getByText("Panel de proveedor")).toBeVisible();
+    await expect(page.getByText("Solicitudes nuevas para cotizar")).toBeVisible();
     await expect(page.getByText("Estado de verificacion", { exact: true })).toBeVisible();
   });
 

@@ -48,13 +48,17 @@ test("PR-020..PR-027 solicitud, cotizacion, aceptacion, ejecucion y confirmacion
   // PR-028: chat cliente-proveedor (en modo demo se actualiza por polling).
   await page.getByLabel("Escribe un mensaje").fill(`¿Pueden venir el lunes? ${ref}`);
   await page.getByRole("button", { name: "Enviar mensaje" }).click();
-  await expect(page.getByLabel("Historial de mensajes")).toContainText(`¿Pueden venir el lunes? ${ref}`);
+  await expect(page.getByLabel("Historial de mensajes")).toContainText(
+    `¿Pueden venir el lunes? ${ref}`,
+  );
 
   await loginAsDemo(page, "proveedor");
   await page.goto("/panel/proveedor/bandeja");
   await expect(page.locator("section.space-y-3", { hasText: "Mis trabajos" })).toContainText(ref);
   await page.goto(detailUrl);
-  await expect(page.getByLabel("Historial de mensajes")).toContainText(`¿Pueden venir el lunes? ${ref}`);
+  await expect(page.getByLabel("Historial de mensajes")).toContainText(
+    `¿Pueden venir el lunes? ${ref}`,
+  );
   await page.getByLabel("Escribe un mensaje").fill("Sí, el lunes a las 10:00");
   await page.getByRole("button", { name: "Enviar mensaje" }).click();
   await expect(page.getByLabel("Historial de mensajes")).toContainText("Sí, el lunes a las 10:00");
@@ -66,4 +70,25 @@ test("PR-020..PR-027 solicitud, cotizacion, aceptacion, ejecucion y confirmacion
   await page.goto(detailUrl);
   await page.getByRole("button", { name: "Confirmar trabajo realizado" }).click();
   await expect(page.getByText(/Trabajo confirmado/)).toBeVisible();
+});
+
+test("solicitud directa desde el perfil de una empresa llega a su bandeja", async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, "Se valida una vez en escritorio");
+  const ref = `directa-${Date.now()}`;
+
+  await loginAsDemo(page, "cliente");
+  await page.goto("/proveedor/p-hogar-fresco");
+  await page.getByLabel("Describe tu requerimiento").fill(`Necesito mantención de split ${ref}`);
+  await page.getByLabel("Comuna").selectOption("Macul");
+  await page.getByRole("button", { name: /Enviar solicitud a/ }).click();
+  await expect(page.getByText("Solicitud enviada")).toBeVisible();
+
+  await loginAsDemo(page, "proveedor");
+  await page.goto("/panel/proveedor/bandeja");
+  const card = page.getByText(ref).first();
+  await expect(card).toBeVisible();
+  await expect(page.getByText("Directa a tu empresa").first()).toBeVisible();
 });

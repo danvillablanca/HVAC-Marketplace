@@ -14,7 +14,7 @@ test.describe("Autenticacion", () => {
     await loginWithCredentials(page, "proveedor@demo.cl", "demo1234");
 
     await expect(page).toHaveURL(/\/panel\/proveedor$/);
-    await expect(page.getByRole("heading", { name: "Hola, Proveedor" })).toBeVisible();
+    await expect(page.getByText("Panel de proveedor")).toBeVisible();
   });
 
   test("credenciales invalidas muestran un error", async ({ page }) => {
