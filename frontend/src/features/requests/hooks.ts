@@ -47,6 +47,7 @@ export function useCreateQuote() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["service-requests", variables.requestId] });
       queryClient.invalidateQueries({ queryKey: ["service-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["provider-metrics"] });
     },
   });
 }
