@@ -6,3 +6,4 @@ export * from "./appointment";
 export * from "./search";
 export * from "./service-request";
 export * from "./notification";
+export * from "./metrics";

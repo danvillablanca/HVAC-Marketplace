@@ -22,6 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/features/auth";
 import { useServiceRequests } from "@/features/requests/hooks";
 import { useMyProviderProfile } from "./provider-hooks";
+import { ProviderMetrics } from "./provider-metrics";
 
 const STATUS_BADGE: Record<
   ProviderVerificationStatus,
@@ -180,6 +181,8 @@ export function ProviderDashboard() {
           </motion.div>
         ))}
       </div>
+
+      {profile && <ProviderMetrics />}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>

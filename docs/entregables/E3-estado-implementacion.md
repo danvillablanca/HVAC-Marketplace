@@ -51,7 +51,7 @@
 | REQ-IA-04 | Rate limit IA y contingencia | A | Pendiente | — | PR-038 | No ejecutada | — |
 | REQ-ADM-01 | Listar/suspender usuarios | M | Pendiente | — | PR-039 | No ejecutada | — |
 | REQ-ADM-02 | Moderar reseñas | M | Pendiente | — | PR-040 | No ejecutada | — |
-| REQ-ADM-03 | Panel de métricas | M | Pendiente | — | PR-041 | No ejecutada | — |
+| REQ-ADM-03 | Panel de métricas | M | Parcial | Adelantado por solicitud de cambio: métricas comerciales del proveedor (`/api/providers/me/metrics`, RPC `provider_metrics`, migración 0014) y tarjeta de motivos de cancelación del admin (`/api/admin/metrics/cancellations`). Falta el panel global del admin (usuarios, solicitudes, proveedores) | PR-041 | OK (unit + E2E demo; pgTAP escrito, sin ejecutar) | 13/11/2026 |
 | REQ-ADM-04 | Catálogo y documentos RAG | M | Pendiente | `categories`, `services` en DB; sin UI admin | PR-042 | No ejecutada | — |
 
 ## 2. Requerimientos no funcionales
@@ -75,6 +75,7 @@
 | Módulo IA | Completo (diagnóstico + RAG + asistente) | Diagnóstico asistido; RAG y asistente diferidos | Priorización por tiempo; ADR-0006 actualizado | Pendiente |
 | Monorepo | No especificado | pnpm 12 + Turborepo | Mejora de DX y compartición de tipos | Informativo |
 | Motivo de cancelación (REQ-SOL-05) | Motivo opcional en texto libre | Motivo obligatorio de una lista predefinida; "Otro" exige detalle | Alimenta las métricas del proveedor y del administrador con causas de abandono cuantificables | Solicitud de cambio "Motivo obligatorio de cancelación" (13/11/2026) |
+| Métricas comerciales del proveedor (adelanta parte de REQ-ADM-03, Sprint 3) | Sin métricas para el proveedor | Recibidas, enviadas, aceptadas, tasa de cotización, tasa de aceptación, tiempo de primera respuesta y monto aceptado, con rango de fechas y variación frente al período anterior de igual duración (mes en curso ↔ mismos días del mes anterior); motivos de cancelación para proveedor y admin | Mide el rendimiento comercial del proveedor; requiere el historial `request_deliveries` porque la bandeja se calcula en vivo | Solicitud de cambio "Métricas del proveedor" (13/11/2026) |
 
 ## 4. Defectos encontrados y corregidos
 

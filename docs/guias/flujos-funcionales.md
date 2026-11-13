@@ -145,6 +145,20 @@ Guía paso a paso de todos los flujos que puedes verificar en **HVAC Connect** c
 
 ---
 
+## Flujo 8b — Proveedor: métricas comerciales
+
+**Requisito:** estar logueado como `proveedor@demo.cl` (con perfil de empresa).
+
+| Paso | Acción | Resultado esperado |
+| ---- | ------ | ------------------ |
+| 1 | Ir a `/panel/proveedor` | Sección "Métricas comerciales" con 7 tarjetas: solicitudes recibidas, cotizaciones enviadas, cotizaciones aceptadas, tasa de cotización, tasa de aceptación, tiempo de primera respuesta y monto aceptado (CLP). Por defecto, "Este mes" comparado con los mismos días del mes anterior. |
+| 2 | Revisar las insignias de cada tarjeta | Variación frente al período anterior: % en conteos y montos, puntos porcentuales (pp) en tasas, "Sin datos previos" si el período anterior está en cero. En el tiempo de respuesta, bajar se muestra en verde. |
+| 3 | Cambiar "Período" a "Mes anterior", "Últimos 30 días" o "Personalizado" (Desde/Hasta) | Las tarjetas se recalculan; el subtítulo muestra ambos rangos en dd-mm-aaaa. Un rango inválido muestra error. |
+| 4 | Como cliente, cancelar una solicitud que llegó a este proveedor y volver al panel | "Motivos de cancelación" muestra la barra del motivo elegido. |
+| 5 | Como `admin@demo.cl`, ir a `/panel/admin/verificaciones` | Tarjeta "Motivos de cancelación" con el total y el desglose de la plataforma en el período. |
+
+---
+
 ## Flujo 9 — Notificaciones y chat
 
 **Requisito:** sesión iniciada. Con Supabase local todo llega en vivo ("· En vivo"); en modo demo se actualiza cada 5–10 s.

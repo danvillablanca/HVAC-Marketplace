@@ -32,6 +32,30 @@ test.describe("Paneles", () => {
     await expect(page.getByText("Estado de verificacion", { exact: true })).toBeVisible();
   });
 
+  test("proveedor ve sus métricas comerciales y cambia el período", async ({ page }) => {
+    await loginAsDemo(page, "proveedor");
+    await page.goto("/panel/proveedor");
+
+    await expect(page.getByRole("heading", { name: "Métricas comerciales" })).toBeVisible();
+    await expect(page.getByTestId("metric-received")).toContainText("Solicitudes recibidas");
+    await expect(page.getByTestId("metric-acceptedAmount")).toContainText("$");
+    await expect(page.getByText(/comparado con/)).toBeVisible();
+
+    await page.getByLabel("Período").selectOption("personalizado");
+    await page.getByLabel("Desde").fill("2026-01-01");
+    await page.getByLabel("Hasta").fill("2026-01-31");
+    await expect(page.getByText(/01-01-2026 al 31-01-2026/)).toBeVisible();
+    await expect(page.getByText(/01-12-2025 al 31-12-2025/)).toBeVisible();
+  });
+
+  test("admin ve los motivos de cancelación", async ({ page }) => {
+    await loginAsDemo(page, "admin");
+    await page.goto("/panel/admin/verificaciones");
+
+    await expect(page.getByText("Motivos de cancelación")).toBeVisible();
+    await expect(page.getByText(/solicitudes canceladas/)).toBeVisible();
+  });
+
   test("proveedor verificado ve su estado en la pagina de verificacion", async ({ page }) => {
     await loginAsDemo(page, "proveedor");
     await page.goto("/panel/proveedor/verificacion");
