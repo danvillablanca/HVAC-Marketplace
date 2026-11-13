@@ -228,3 +228,23 @@
 ### Pendiente relacionado
 - La tabla `leads` y `/api/leads` quedan sin uso en la UI (prototipo); se pueden eliminar cuando el equipo lo decida.
 
+---
+
+## Solicitud de cambio: motivo obligatorio de cancelación — 13/11/2026
+
+**Rama:** `feature/motivo-cancelacion`
+
+### Lo hecho
+- Migración `0013_cancel_reason.sql`: enum `cancel_reason` (`presupuesto_alto`, `proveedor_otra_via`, `resuelto_solo`, `otro`), columnas `cancel_reason`, `cancel_reason_detail` y `cancelled_at` en `service_requests`, y restricciones `check` (cancelada ⇒ motivo; "otro" ⇒ detalle de 3 o más caracteres). Las canceladas previas se registran como "otro" con la nota del historial.
+- `transition_request` recibe `p_reason` y `p_reason_detail` y valida el motivo dentro de la transacción (misma firma restringida a `service_role`). El historial guarda la etiqueta del motivo.
+- `shared`: `CANCEL_REASONS`, `CANCEL_REASON_LABELS`, `cancelReasonText` y `serviceRequestUpdateSchema` con la regla del motivo.
+- Backend: misma regla en modo demo y real; la notificación a los proveedores que cotizaron incluye el motivo.
+- Frontend: selector de motivo obligatorio, detalle obligatorio para "Otro" y el motivo visible en el detalle de la solicitud cancelada.
+- Pruebas: unit (shared, backend, frontend), pgTAP (`requests_test.sql`), E2E demo y `tests/real/bloque-e.cjs` actualizado.
+
+### Problemas y solución
+- El seed insertaba la solicitud cancelada sin motivo y la nueva restricción lo impedía: se separó en su propio `insert` con motivo.
+- La firma de `transition_request` cambió: se elimina la anterior y se repiten `revoke`/`grant` para la nueva.
+
+### Lo que sigue
+- Métricas comerciales del proveedor (usan el motivo para el desglose de cancelaciones).

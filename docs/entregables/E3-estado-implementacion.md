@@ -1,7 +1,7 @@
 # E3 — Estado de Implementación y Trazabilidad
 
 **Proyecto:** HVAC Connect (IIC3113, Grupo 1)
-**Última actualización:** 02/11/2026
+**Última actualización:** 13/11/2026
 
 > Resultados "demo": ejecutados contra `DEMO_MODE=true` (sin Supabase) con un recorrido Playwright de `docs/guias/flujos-funcionales.md` (37/37 pasos OK). Aún no hay ejecución contra Supabase local (`DEMO_MODE=false`) porque falta Docker en el equipo de desarrollo.
 
@@ -34,7 +34,7 @@
 | REQ-SOL-02 | Distribución a proveedores elegibles | A | Implementado | `eligible_providers_for_request` (RN-03), notificación `nueva_solicitud` a cada elegible; `provider_inbox` sin dirección ni cliente + RLS `requests_awarded_provider_select` | PR-021 | OK (Supabase local + pgTAP) | 02/11/2026 |
 | REQ-SOL-03 | Bandeja del proveedor | A | Implementado | `ProviderInboxPage`: disponibles / cotizadas / mis trabajos, filtros por urgencia y servicio, orden por fecha; excluye canceladas y adjudicadas a otro | PR-022 | OK (Supabase local) | 02/11/2026 |
 | REQ-SOL-04 | Estados de solicitud con historial | A | Implementado | RPC `transition_request`, `accept_quote`, `create_quote` y `confirm_completion` con actor y rol (D-11/D-22); historial en el detalle | PR-023 | OK (Supabase local + pgTAP) | 02/11/2026 |
-| REQ-SOL-05 | Cancelar solicitud e historial | M | Implementado | Cancelación solo del cliente en Abierta/Con cotizaciones, motivo opcional, aviso a quienes cotizaron; filtro por estado en el historial | PR-024 | OK (Supabase local) | 02/11/2026 |
+| REQ-SOL-05 | Cancelar solicitud e historial | M | Implementado | Cancelación solo del cliente en Abierta/Con cotizaciones con **motivo obligatorio** de una lista (Presupuesto alto, Proveedor encontrado por otra vía, Se resolvió el problema solo, Otro + detalle), guardado en la solicitud (migración 0013); aviso con el motivo a quienes cotizaron; filtro por estado en el historial | PR-024 | OK (unit + pgTAP + E2E demo) | 13/11/2026 |
 | REQ-COT-01 | Cotización con monto CLP | A | Implementado | `create_quote`: solo elegibles y solicitudes abiertas; índice único parcial (RN-04); `expire_quotes` pasa a `vencida` al leer o aceptar | PR-025 | OK (Supabase local + pgTAP) | 02/11/2026 |
 | REQ-COT-02 | Comparar y aceptar cotizaciones | A | Implementado | Tabla comparativa (monto, IVA, plazo, vigencia, calificación, distancia, menor precio); aceptar rechaza el resto (RN-05), revela el contacto (RN-10) y notifica a todos; también rechazar | PR-026 | OK (Supabase local) | 02/11/2026 |
 | REQ-COT-03 | Marcar ejecución y completar | A | Implementado | Proveedor adjudicado marca En ejecución → Completada; el cliente confirma; auto-confirmación perezosa a los 7 días (sin `pg_cron`); la confirmación habilita el enlace a la reseña | PR-027 | OK (Supabase local) | 02/11/2026 |
@@ -74,6 +74,7 @@
 | Mapa | Leaflet/OpenStreetMap | MapLibre GL JS + OSM/MapTiler | ADR-0008: WebGL, clustering nativo, mejor rendimiento | Pendiente |
 | Módulo IA | Completo (diagnóstico + RAG + asistente) | Diagnóstico asistido; RAG y asistente diferidos | Priorización por tiempo; ADR-0006 actualizado | Pendiente |
 | Monorepo | No especificado | pnpm 12 + Turborepo | Mejora de DX y compartición de tipos | Informativo |
+| Motivo de cancelación (REQ-SOL-05) | Motivo opcional en texto libre | Motivo obligatorio de una lista predefinida; "Otro" exige detalle | Alimenta las métricas del proveedor y del administrador con causas de abandono cuantificables | Solicitud de cambio "Motivo obligatorio de cancelación" (13/11/2026) |
 
 ## 4. Defectos encontrados y corregidos
 
