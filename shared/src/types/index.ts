@@ -217,6 +217,8 @@ export interface Quote {
   validDays: number;
   status: QuoteStatus;
   createdAt: string;
+  /** Métricas: momento en que el cliente aceptó la cotización. */
+  acceptedAt?: string | null;
   /** COT-02: datos para comparar cotizaciones. */
   providerRating?: number | null;
   providerReviews?: number;
