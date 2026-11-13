@@ -3,7 +3,7 @@
 -- proveedor2@demo.cl (0d..04, Climatiza Ñuñoa a0..11).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(25);
 
 -- Solicitud nueva de cliente@demo.cl en Ñuñoa (geom desde la comuna por trigger).
 insert into public.service_requests (id, client_id, service_id, equipment, description, urgency, commune)
@@ -63,6 +63,34 @@ select lives_ok($$ select public.transition_request('ffffffff-0000-4000-8000-000
   'completada', '0d000000-0000-4000-8000-000000000004', null) $$, 'PR-027: el adjudicado completa');
 select lives_ok($$ select public.confirm_completion('ffffffff-0000-4000-8000-000000000001',
   '0d000000-0000-4000-8000-000000000001') $$, 'PR-027 COT-03: el cliente confirma');
+
+-- SOL-05 (cambio de alcance, migracion 0013): motivo obligatorio al cancelar.
+insert into public.service_requests (id, client_id, service_id, equipment, description, urgency, commune)
+values ('ffffffff-0000-4000-8000-000000000002', '0d000000-0000-4000-8000-000000000001',
+        '50000000-0000-0000-0000-000000000002', 'split',
+        'Solicitud para probar el motivo obligatorio de cancelacion', 'media', 'Ñuñoa');
+select throws_ok($$ select public.transition_request('ffffffff-0000-4000-8000-000000000002',
+  'cancelada', '0d000000-0000-4000-8000-000000000001') $$, 'P0001', null,
+  'PR-024 SOL-05: no se cancela sin motivo');
+select throws_ok($$ select public.transition_request('ffffffff-0000-4000-8000-000000000002',
+  'cancelada', '0d000000-0000-4000-8000-000000000001', null, 'otro', '  ') $$, 'P0001', null,
+  'PR-024 SOL-05: el motivo "otro" exige detalle');
+select lives_ok($$ select public.transition_request('ffffffff-0000-4000-8000-000000000002',
+  'cancelada', '0d000000-0000-4000-8000-000000000001', null, 'presupuesto_alto', null) $$,
+  'PR-024 SOL-05: el cliente cancela con un motivo de la lista');
+select results_eq($$ select cancel_reason::text, cancel_reason_detail, cancelled_at is not null
+  from public.service_requests where id = 'ffffffff-0000-4000-8000-000000000002' $$,
+  $$ values ('presupuesto_alto'::text, null::text, true) $$,
+  'PR-024 SOL-05: la solicitud guarda motivo y fecha de cancelacion');
+select is((select note from public.service_request_events
+  where request_id = 'ffffffff-0000-4000-8000-000000000002' and to_status = 'cancelada'),
+  'Presupuesto alto', 'PR-024 SOL-05: el historial registra la etiqueta del motivo');
+select throws_ok($$ update public.service_requests set status = 'cancelada', cancel_reason = null
+  where id = 'e0000000-0000-0000-0000-000000000001' $$, '23514', null,
+  'SOL-05: la base no admite una solicitud cancelada sin motivo');
+select ok((select cancel_reason is not null from public.service_requests
+  where id = 'e0000000-0000-0000-0000-000000000006'),
+  'SOL-05: la solicitud cancelada del seed tiene motivo');
 
 -- COT-01: vencimiento.
 update public.quotes set created_at = now() - interval '20 days', status = 'enviada'
