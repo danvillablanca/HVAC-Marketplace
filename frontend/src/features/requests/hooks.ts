@@ -3,6 +3,7 @@ import type {
   ServiceRequest,
   ServiceRequestDetail,
   ServiceRequestCreateInput,
+  ServiceRequestUpdateInput,
   QuoteCreateInput,
   Quote,
 } from "@hvac/shared";
@@ -81,10 +82,10 @@ export function useConfirmCompletion() {
 export function useTransitionRequest() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, status, note }: { id: string; status: string; note?: string }) =>
+    mutationFn: ({ id, ...body }: { id: string } & ServiceRequestUpdateInput) =>
       apiFetch<ServiceRequest>(`/api/requests/${id}`, {
         method: "PATCH",
-        body: { status, note },
+        body,
       }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["service-requests", variables.id] });
