@@ -152,6 +152,15 @@ export const REQUEST_STATUS = [
 ] as const;
 export type RequestStatus = (typeof REQUEST_STATUS)[number];
 
+/** SOL-05 (cambio de alcance): motivo obligatorio al cancelar una solicitud. */
+export const CANCEL_REASONS = [
+  "presupuesto_alto",
+  "proveedor_otra_via",
+  "resuelto_solo",
+  "otro",
+] as const;
+export type CancelReason = (typeof CANCEL_REASONS)[number];
+
 export const QUOTE_STATUS = ["enviada", "aceptada", "rechazada", "vencida"] as const;
 export type QuoteStatus = (typeof QUOTE_STATUS)[number];
 
@@ -190,6 +199,10 @@ export interface ServiceRequest {
   targetProviderName?: string | null;
   /** Vista del proveedor: la solicitud fue dirigida a su empresa. */
   isDirect?: boolean;
+  /** SOL-05: motivo de cancelacion (obligatorio cuando status = cancelada). */
+  cancelReason?: CancelReason | null;
+  cancelReasonDetail?: string | null;
+  cancelledAt?: string | null;
 }
 
 export interface Quote {
