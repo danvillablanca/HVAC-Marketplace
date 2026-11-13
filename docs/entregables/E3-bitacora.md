@@ -248,3 +248,29 @@
 
 ### Lo que sigue
 - Métricas comerciales del proveedor (usan el motivo para el desglose de cancelaciones).
+
+---
+
+## Solicitud de cambio: métricas comerciales del proveedor — 13/11/2026
+
+**Rama:** `feature/metricas-proveedor` (sale de `feature/motivo-cancelacion`)
+
+### Lo hecho
+- Migración `0014_provider_metrics.sql`: tabla `request_deliveries` (qué solicitudes llegaron a cada proveedor y cuándo) con RLS (el proveedor ve las suyas mediante el helper `is_provider_owner`, el admin todas, nadie escribe desde el cliente); triggers que la llenan al crear la solicitud (elegibles RN-03) y al cotizar; `quotes.accepted_at` fijado por trigger al aceptar (sin redefinir `accept_quote` ni `create_quote`); backfill de los datos existentes; RPC `provider_metrics` y `admin_cancellation_metrics` (solo `service_role`).
+- `shared/src/schemas/metrics.ts`: `metricsQuerySchema` (fechas `aaaa-mm-dd`, por defecto el mes en curso, máximo 366 días), `previousPeriod`, `rangeBounds`, `buildSnapshot`, `computeDeltas` y `formatDuration`, compartidos por el modo demo y el real.
+- Backend: `services/metrics.ts` con la misma regla en memoria y por RPC; rutas `GET /api/providers/me/metrics` (proveedor) y `GET /api/admin/metrics/cancellations` (admin).
+- Frontend: sección "Métricas comerciales" en el panel del proveedor (selector de período, 7 KPI con variación y barras de motivos de cancelación, sin librería de gráficos) y tarjeta "Motivos de cancelación" en el panel de verificaciones del admin.
+- Pruebas: unit (shared, servicio demo, rutas, componente), E2E demo (`panel.spec.ts`) y pgTAP `provider_metrics_test.sql`.
+
+### Decisiones
+- **Recibidas** = solicitudes entregadas al proveedor en el rango; **tasa de cotización** = de esas, cuántas cotizó; **tasa de aceptación** = de las cotizadas en el rango, cuántas ganó. Así las tasas nunca superan el 100 %.
+- **Comparación**: mes en curso o mes completo ↔ mismos días del mes anterior; otro rango ↔ período inmediatamente anterior de igual duración. Las tasas se comparan en puntos porcentuales.
+- Los límites del rango se calculan en UTC: una actividad entre las 21:00 y las 24:00 de Chile del último día del mes puede quedar en el mes siguiente. Se acepta para el MVP.
+
+### Problemas y solución
+- La sesión anterior se cortó (Bus error de WSL con el sistema de archivos en solo lectura) y dejó vacía la referencia `refs/heads/feature/metricas-proveedor`; se restauró apuntando al último commit de `feature/motivo-cancelacion`. `git fsck` quedó limpio.
+- Por decisión del equipo se trabajó solo en modo demo (en memoria): **las pruebas pgTAP de 0013 y 0014 están escritas pero no se ejecutaron** contra Supabase local. Quedan pendientes, igual que aplicar las migraciones en la nube (lo hará quien despliegue).
+
+### Lo que sigue
+- Ejecutar `pnpm db:reset && pnpm db:test` y los recorridos de `tests/real/` antes de desplegar.
+- Panel global del admin (resto de REQ-ADM-03).
