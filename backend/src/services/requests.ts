@@ -65,6 +65,22 @@ function rpcError(error: { code?: string; message: string }): HttpError {
 // =============================================================================
 
 const demoRequests = new Map<string, DemoRequest>();
+/** Métricas (migración 0014): solicitud -> proveedor -> momento de entrega. */
+const demoDeliveries = new Map<string, Map<string, string>>();
+
+function demoDeliver(requestId: string, providerId: string, at: string): void {
+  const byProvider = demoDeliveries.get(requestId) ?? new Map<string, string>();
+  if (!byProvider.has(providerId)) byProvider.set(providerId, at);
+  demoDeliveries.set(requestId, byProvider);
+}
+
+/** Datos en memoria para las métricas del proveedor y del administrador. */
+export function demoMetricsSource(): {
+  requests: Array<ServiceRequest & { quotes: Quote[] }>;
+  deliveries: Map<string, Map<string, string>>;
+} {
+  return { requests: [...demoRequests.values()], deliveries: demoDeliveries };
+}
 
 function requireDemo(): void {
   if (!isDemoMode) throw new HttpError("service_unavailable", "Base de datos no disponible", 503);
@@ -204,6 +220,7 @@ function mapQuoteRow(row: Row, distances: Map<string, number> = new Map()): Quot
     validDays: Number(row.valid_days),
     status: row.status,
     createdAt: String(row.created_at),
+    acceptedAt: row.accepted_at ?? null,
   };
 }
 
@@ -233,9 +250,14 @@ async function providerIdOf(db: any, userId: string): Promise<string | null> {
   return data ? String(data.id) : null;
 }
 
-async function requireProviderId(user: AuthenticatedUser): Promise<string> {
+/** providers.id del usuario proveedor (null si aún no completa el perfil). */
+export async function findProviderId(user: AuthenticatedUser): Promise<string | null> {
   const db = getServiceClient();
-  const id = db ? await providerIdOf(db, user.id) : (demoProviderOf(user.id)?.id ?? null);
+  return db ? await providerIdOf(db, user.id) : (demoProviderOf(user.id)?.id ?? null);
+}
+
+async function requireProviderId(user: AuthenticatedUser): Promise<string> {
+  const id = await findProviderId(user);
   if (!id)
     throw new HttpError("profile_required", "Completa el perfil de tu empresa para cotizar", 409);
   return id;
@@ -512,7 +534,9 @@ export async function createRequest(
     demoEvent(r, clientId, null, "abierta", "Solicitud creada");
     demoRequests.set(r.id, r);
     created = demoPublic(r);
-    eligibleUsers = demoEligible(r).map((e) => e.userId);
+    const eligible = demoEligible(r);
+    eligible.forEach((e) => demoDeliver(r.id, e.providerId, now));
+    eligibleUsers = eligible.map((e) => e.userId);
   } else {
     const { data, error } = await db
       .from("service_requests")
@@ -784,6 +808,7 @@ export async function createQuote(
       createdAt: new Date().toISOString(),
     };
     r.quotes.push(quote);
+    demoDeliver(r.id, providerId, r.createdAt);
     if (r.status === "abierta") {
       r.status = "con_cotizaciones";
       demoEvent(r, null, "abierta", "con_cotizaciones", "Primera cotización recibida");
@@ -860,6 +885,7 @@ export async function decideQuote(
       }
       const rejected = r.quotes.filter((x) => x.id !== quoteId && x.status === "enviada");
       q.status = "aceptada";
+      q.acceptedAt = new Date().toISOString();
       rejected.forEach((x) => (x.status = "rechazada"));
       const from = r.status;
       r.status = "aceptada";
