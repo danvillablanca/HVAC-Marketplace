@@ -421,8 +421,11 @@ insert into public.service_requests (id, client_id, service_id, equipment, descr
   ('e0000000-0000-0000-0000-000000000003', '0d000000-0000-4000-8000-000000000002', '50000000-0000-0000-0000-000000000007', 'ducto', 'Mantencion del sistema de ductos de una oficina de 120 m2 con dos unidades.', 'media', 'aceptada', 'Providencia', 'Metropolitana de Santiago', st_setsrid(st_makepoint(-70.6170, -33.4260), 4326)::geography, now() - interval '8 days'),
   ('e0000000-0000-0000-0000-000000000004', '0d000000-0000-4000-8000-000000000001', '50000000-0000-0000-0000-000000000001', 'split', 'Mantencion preventiva de tres equipos split antes del verano.', 'baja', 'en_ejecucion', 'Macul', 'Metropolitana de Santiago', st_setsrid(st_makepoint(-70.5990, -33.4920), 4326)::geography, now() - interval '12 days'),
   ('e0000000-0000-0000-0000-000000000005', '0d000000-0000-4000-8000-000000000002', '50000000-0000-0000-0000-000000000012', 'split', 'Equipo split con ruido fuerte en la unidad exterior, se apaga solo.', 'urgente', 'completada', 'Peñalolén', 'Metropolitana de Santiago', st_setsrid(st_makepoint(-70.5400, -33.4850), 4326)::geography, now() - interval '25 days'),
-  ('e0000000-0000-0000-0000-000000000006', '0d000000-0000-4000-8000-000000000001', '50000000-0000-0000-0000-000000000008', 'chiller', 'Revision de un chiller pequeno en un local comercial del centro.', 'media', 'cancelada', 'Santiago', 'Metropolitana de Santiago', st_setsrid(st_makepoint(-70.6505, -33.4378), 4326)::geography, now() - interval '15 days'),
   ('e0000000-0000-0000-0000-000000000007', '0d000000-0000-4000-8000-000000000002', '50000000-0000-0000-0000-000000000007', 'vrf', 'Sistema VRF de oficina con una unidad interior que no responde al control.', 'alta', 'con_cotizaciones', 'Las Condes', 'Metropolitana de Santiago', st_setsrid(st_makepoint(-70.5670, -33.4080), 4326)::geography, now() - interval '40 days');
+
+-- Solicitud cancelada: el motivo es obligatorio desde la migración 0013.
+insert into public.service_requests (id, client_id, service_id, equipment, description, urgency, status, commune, region, geom, created_at, cancel_reason, cancel_reason_detail, cancelled_at) values
+  ('e0000000-0000-0000-0000-000000000006', '0d000000-0000-4000-8000-000000000001', '50000000-0000-0000-0000-000000000008', 'chiller', 'Revision de un chiller pequeno en un local comercial del centro.', 'media', 'cancelada', 'Santiago', 'Metropolitana de Santiago', st_setsrid(st_makepoint(-70.6505, -33.4378), 4326)::geography, now() - interval '15 days', 'proveedor_otra_via', null, now() - interval '15 days' + interval '6 hours');
 
 insert into public.service_request_events (request_id, actor_id, from_status, to_status, note, created_at) values
   ('e0000000-0000-0000-0000-000000000001', '0d000000-0000-4000-8000-000000000001', null, 'abierta', 'Solicitud creada', now() - interval '1 days' + interval '0 hours'),
@@ -441,7 +444,7 @@ insert into public.service_request_events (request_id, actor_id, from_status, to
   ('e0000000-0000-0000-0000-000000000005', '0d000000-0000-4000-8000-000000000003', 'aceptada', 'en_ejecucion', 'Trabajo iniciado', now() - interval '25 days' + interval '18 hours'),
   ('e0000000-0000-0000-0000-000000000005', '0d000000-0000-4000-8000-000000000003', 'en_ejecucion', 'completada', 'Trabajo completado', now() - interval '25 days' + interval '24 hours'),
   ('e0000000-0000-0000-0000-000000000006', '0d000000-0000-4000-8000-000000000001', null, 'abierta', 'Solicitud creada', now() - interval '15 days' + interval '0 hours'),
-  ('e0000000-0000-0000-0000-000000000006', '0d000000-0000-4000-8000-000000000001', 'abierta', 'cancelada', 'El cliente cancelo la solicitud', now() - interval '15 days' + interval '6 hours'),
+  ('e0000000-0000-0000-0000-000000000006', '0d000000-0000-4000-8000-000000000001', 'abierta', 'cancelada', 'Proveedor encontrado por otra vía', now() - interval '15 days' + interval '6 hours'),
   ('e0000000-0000-0000-0000-000000000007', '0d000000-0000-4000-8000-000000000002', null, 'abierta', 'Solicitud creada', now() - interval '40 days' + interval '0 hours'),
   ('e0000000-0000-0000-0000-000000000007', null, 'abierta', 'con_cotizaciones', 'Primera cotizacion recibida', now() - interval '40 days' + interval '6 hours');
 

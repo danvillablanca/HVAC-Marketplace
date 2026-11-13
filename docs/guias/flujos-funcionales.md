@@ -139,8 +139,9 @@ Guía paso a paso de todos los flujos que puedes verificar en **HVAC Connect** c
 
 | Paso | Acción | Resultado esperado |
 | ---- | ------ | ------------------ |
-| 1 | Abrir una solicitud "Abierta" o "Con cotizaciones" → "Cancelar solicitud" | Pide un motivo opcional. |
-| 2 | "Confirmar cancelación" | Estado "Cancelada", motivo en el historial, cotizaciones vigentes rechazadas y aviso a los proveedores que cotizaron. Ya no acepta cotizaciones. |
+| 1 | Abrir una solicitud "Abierta" o "Con cotizaciones" → "Cancelar solicitud" | Pide elegir un motivo obligatorio: Presupuesto alto, Proveedor encontrado por otra vía, Se resolvió el problema solo u Otro. "Confirmar cancelación" queda deshabilitado sin motivo. |
+| 2 | Elegir "Otro" | Aparece "Cuéntanos el motivo" (obligatorio, mínimo 3 caracteres); con los otros motivos el comentario es opcional. |
+| 3 | "Confirmar cancelación" | Estado "Cancelada", "Motivo: …" en el detalle y en el historial, cotizaciones vigentes rechazadas y aviso a los proveedores que cotizaron. Ya no acepta cotizaciones. |
 
 ---
 

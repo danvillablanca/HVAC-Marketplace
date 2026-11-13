@@ -1,7 +1,10 @@
 import { randomUUID } from "node:crypto";
 import {
+  CANCEL_REASON_LABELS,
   SERVICE_CATALOG,
+  cancelReasonText,
   findCommune,
+  type CancelReason,
   type Quote,
   type QuoteCreateInput,
   type RequestEvent,
@@ -177,6 +180,9 @@ function mapRequestRow(row: Row): ServiceRequest {
     clientConfirmedAt: row.client_confirmed_at ?? null,
     targetProviderId: row.target_provider_id ?? null,
     targetProviderName: row.target?.legal_name ?? null,
+    cancelReason: row.cancel_reason ?? null,
+    cancelReasonDetail: row.cancel_reason_detail ?? null,
+    cancelledAt: row.cancelled_at ?? null,
   };
 }
 
@@ -552,13 +558,41 @@ export async function createRequest(
   return created;
 }
 
+export interface TransitionInput {
+  note?: string;
+  /** SOL-05: obligatorio al cancelar. */
+  reason?: CancelReason;
+  /** Obligatorio cuando el motivo es "otro". */
+  reasonDetail?: string;
+}
+
+/** SOL-05: motivo obligatorio de la lista; "otro" exige detalle (misma regla que la RPC). */
+function validateCancelReason(reason?: CancelReason, detail?: string): string | null {
+  if (!reason || !(reason in CANCEL_REASON_LABELS)) {
+    throw new HttpError("transition_error", "Debes indicar el motivo de la cancelación", 400);
+  }
+  const clean = detail?.trim() || null;
+  if (reason === "otro" && (!clean || clean.length < 3)) {
+    throw new HttpError("transition_error", "Describe el motivo de la cancelación", 400);
+  }
+  if (clean && clean.length > 500) {
+    throw new HttpError(
+      "transition_error",
+      "El detalle del motivo no puede superar 500 caracteres",
+      400,
+    );
+  }
+  return clean;
+}
+
 /** SOL-04 / SOL-05: transiciones validadas por actor y rol. */
 export async function transitionRequest(
   requestId: string,
   newStatus: "en_ejecucion" | "completada" | "cancelada",
   user: AuthenticatedUser,
-  note?: string,
+  input: TransitionInput = {},
 ): Promise<ServiceRequest> {
+  const { note, reason, reasonDetail } = input;
   const db = getServiceClient();
   let request: ServiceRequest;
   let quotedProviderUsers: string[] = [];
@@ -582,7 +616,11 @@ export async function transitionRequest(
           400,
         );
       }
+      const detail = validateCancelReason(reason, reasonDetail);
       r.quotes.filter((q) => q.status === "enviada").forEach((q) => (q.status = "rechazada"));
+      r.cancelReason = reason!;
+      r.cancelReasonDetail = detail;
+      r.cancelledAt = new Date().toISOString();
     } else {
       if (!awarded)
         throw new HttpError(
@@ -602,7 +640,13 @@ export async function transitionRequest(
     r.status = newStatus;
     r.updatedAt = new Date().toISOString();
     if (newStatus === "completada") r.completedAt = r.updatedAt;
-    demoEvent(r, user.id, from, newStatus, note ?? null);
+    demoEvent(
+      r,
+      user.id,
+      from,
+      newStatus,
+      newStatus === "cancelada" ? cancelReasonText(reason!, reasonDetail) : (note ?? null),
+    );
     request = demoPublic(r);
     quotedProviderUsers = listDemoProfiles()
       .filter((p) => r.quotes.some((q) => q.providerId === p.profile.id))
@@ -613,6 +657,8 @@ export async function transitionRequest(
       p_new_status: newStatus,
       p_actor: user.id,
       p_note: note ?? null,
+      p_reason: newStatus === "cancelada" ? (reason ?? null) : null,
+      p_reason_detail: newStatus === "cancelada" ? reasonDetail?.trim() || null : null,
     });
     if (error) throw rpcError(error);
     const { data } = await db
@@ -634,7 +680,9 @@ export async function transitionRequest(
         userId,
         type: "solicitud_actualizada",
         title: "Una solicitud que cotizaste fue cancelada",
-        body: note ? `Motivo: ${note}` : "El cliente canceló la solicitud.",
+        body: reason
+          ? `Motivo: ${cancelReasonText(reason, reasonDetail)}`
+          : "El cliente canceló la solicitud.",
         refType: "request",
         refId: requestId,
       });

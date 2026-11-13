@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CANCEL_REASONS } from "../types/index";
 
 export const serviceRequestCreateSchema = z.object({
   serviceId: z.string().uuid().optional(),
@@ -16,11 +17,28 @@ export const serviceRequestCreateSchema = z.object({
 });
 export type ServiceRequestCreateInput = z.infer<typeof serviceRequestCreateSchema>;
 
-/** SOL-04: transiciones que un usuario puede pedir (las demas las fija el sistema). */
-export const serviceRequestUpdateSchema = z.object({
-  status: z.enum(["en_ejecucion", "completada", "cancelada"]),
-  note: z.string().trim().max(500).optional(),
-});
+/**
+ * SOL-04: transiciones que un usuario puede pedir (las demas las fija el sistema).
+ * SOL-05: al cancelar, el motivo es obligatorio; "otro" exige describirlo.
+ */
+export const serviceRequestUpdateSchema = z
+  .object({
+    status: z.enum(["en_ejecucion", "completada", "cancelada"]),
+    note: z.string().trim().max(500).optional(),
+    reason: z.enum(CANCEL_REASONS).optional(),
+    reasonDetail: z.string().trim().max(500, "Máximo 500 caracteres").optional(),
+  })
+  .refine((v) => v.status !== "cancelada" || Boolean(v.reason), {
+    path: ["reason"],
+    message: "Selecciona el motivo de la cancelación",
+  })
+  .refine(
+    (v) =>
+      v.status !== "cancelada" ||
+      v.reason !== "otro" ||
+      Boolean(v.reasonDetail && v.reasonDetail.length >= 3),
+    { path: ["reasonDetail"], message: "Describe el motivo de la cancelación" },
+  );
 export type ServiceRequestUpdateInput = z.infer<typeof serviceRequestUpdateSchema>;
 
 export const quoteCreateSchema = z.object({
@@ -50,4 +68,3 @@ export const messageCreateSchema = z.object({
   body: z.string().trim().min(1, "Escribe un mensaje").max(2000, "Maximo 2.000 caracteres"),
 });
 export type MessageCreateInput = z.infer<typeof messageCreateSchema>;
-
