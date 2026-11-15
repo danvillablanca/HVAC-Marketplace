@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { formatCLP, normalizePhone, formatPhone, formatDistance, formatDate } from "./format";
+import {
+  formatCLP,
+  normalizePhone,
+  formatPhone,
+  formatDistance,
+  formatDate,
+  formatDateTime,
+} from "./format";
 
 describe("utils/format", () => {
   describe("formatCLP", () => {
@@ -87,6 +94,24 @@ describe("utils/format", () => {
     it("devuelve em dash para fechas invalidas", () => {
       expect(formatDate("no-es-fecha")).toBe("—");
       expect(formatDate("")).toBe("—");
+    });
+  });
+
+  describe("RNF-11 hora de Chile (America/Santiago)", () => {
+    it("usa la fecha de Chile aunque en UTC ya sea el dia siguiente", () => {
+      // 02:00 UTC del 01/10 son las 23:00 del 30/09 en Santiago (UTC-3, horario de verano).
+      expect(formatDate("2026-10-01T02:00:00Z")).toBe("30-09-2026");
+      // 03:30 UTC del 01/07 son las 23:30 del 30/06 en Santiago (UTC-4, horario de invierno).
+      expect(formatDate("2026-07-01T03:30:00Z")).toBe("30-06-2026");
+    });
+
+    it("formatDateTime muestra dd-mm-aaaa hh:mm en 24 horas", () => {
+      expect(formatDateTime("2026-11-15T17:45:00Z")).toMatch(/^15-11-2026,? 14:45$/);
+      expect(formatDateTime("no-es-fecha")).toBe("—");
+    });
+
+    it("CLP sin decimales y con punto de miles", () => {
+      expect(formatCLP(1234567)).toMatch(/^\$\s?1\.234\.567$/);
     });
   });
 });

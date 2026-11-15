@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Briefcase, Inbox, MapPin, ShieldAlert } from "lucide-react";
-import { SERVICE_CATALOG, URGENCY_LEVELS, type ServiceRequest } from "@hvac/shared";
+import { formatDate, SERVICE_CATALOG, URGENCY_LEVELS, type ServiceRequest } from "@hvac/shared";
 import { RequireRole, useAuth } from "@/features/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,7 +59,7 @@ function RequestCard({
               <MapPin className="size-3" /> ~{req.distanceKm} km
             </span>
           )}
-          <span>{new Date(req.createdAt).toLocaleDateString("es-CL")}</span>
+          <span>{formatDate(req.createdAt)}</span>
         </p>
       </CardContent>
     </Card>

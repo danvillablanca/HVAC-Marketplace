@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { MessageCircle, Send } from "lucide-react";
-import { messageCreateSchema } from "@hvac/shared";
+import { formatDateTime, messageCreateSchema } from "@hvac/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,7 @@ import { messagesKey, threadsKey, useMessages, useSendMessage, useThreads } from
 const POLL_MS = 5_000;
 
 function time(iso: string): string {
-  return new Date(iso).toLocaleString("es-CL", { dateStyle: "short", timeStyle: "short" });
+  return formatDateTime(iso);
 }
 
 /** REQ-MSG-01: conversacion entre el cliente y cada proveedor que cotizo. */
