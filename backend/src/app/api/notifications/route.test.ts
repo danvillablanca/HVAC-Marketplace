@@ -3,7 +3,7 @@ import { jsonRequest } from "@/test/http";
 import { createNotification } from "@/services/notifications";
 import { GET, OPTIONS, PATCH } from "./route";
 
-describe("GET /api/notifications", () => {
+describe("PR-030 GET /api/notifications", () => {
   it("lista notificaciones del usuario autenticado", async () => {
     // Crear una notificación para el usuario de test
     await createNotification({
@@ -44,7 +44,7 @@ describe("GET /api/notifications", () => {
   });
 });
 
-describe("PATCH /api/notifications (mark all read)", () => {
+describe("PR-030 PATCH /api/notifications (mark all read)", () => {
   it("marca todas las notificaciones como leídas", async () => {
     await createNotification({
       userId: "test-cliente",

@@ -6,7 +6,7 @@ afterEach(() => {
   vi.resetModules();
 });
 
-describe("answerQuestion sin GEMINI_API_KEY", () => {
+describe("PR-035 answerQuestion sin GEMINI_API_KEY (IA-01, reglas)", () => {
   it("devuelve respuesta de diagnóstico basada en reglas para 'no enfría'", async () => {
     const result = await answerQuestion(
       { message: "Mi aire acondicionado no enfría bien" },
@@ -54,7 +54,7 @@ describe("answerQuestion sin GEMINI_API_KEY", () => {
   });
 });
 
-describe("answerQuestion con GEMINI_API_KEY configurada", () => {
+describe("PR-035 answerQuestion con GEMINI_API_KEY configurada (IA-01, fallback)", () => {
   it("intenta usar Gemini y cae a reglas si no hay red", async () => {
     vi.resetModules();
     vi.stubEnv("GEMINI_API_KEY", "test-key");

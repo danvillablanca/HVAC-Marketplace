@@ -7,7 +7,7 @@ import {
   markRead,
 } from "./notifications";
 
-describe("notifications service (demo)", () => {
+describe("PR-030 notifications service (demo, NOT-01)", () => {
   it("crea y lista notificaciones", async () => {
     const n = await createNotification({
       userId: "svc-user-1",
