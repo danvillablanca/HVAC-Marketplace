@@ -6,3 +6,4 @@ coverage
 pnpm-lock.yaml
 .turbo
 shared/src/types/database.ts
+docs/entregables/evidencia

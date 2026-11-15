@@ -1,9 +1,9 @@
 # E3 — Estado de Implementación y Trazabilidad
 
 **Proyecto:** HVAC Connect (IIC3113, Grupo 1)
-**Última actualización:** 13/11/2026
+**Última actualización:** 15/11/2026
 
-> Resultados "demo": ejecutados contra `DEMO_MODE=true` (sin Supabase) con un recorrido Playwright de `docs/guias/flujos-funcionales.md` (37/37 pasos OK). Aún no hay ejecución contra Supabase local (`DEMO_MODE=false`) porque falta Docker en el equipo de desarrollo.
+> Resultados "demo": ejecutados contra `DEMO_MODE=true` (sin Supabase) con un recorrido Playwright de `docs/guias/flujos-funcionales.md` (37/37 pasos OK). Desde el 15/11/2026 la suite pgTAP completa (79/79) y las pruebas no funcionales se ejecutaron contra Supabase local (`DEMO_MODE=false`); detalle en [`E3-pruebas-no-funcionales.md`](E3-pruebas-no-funcionales.md).
 
 ---
 
@@ -20,7 +20,7 @@
 | REQ-PRO-01 | Editar perfil del proveedor | A | Implementado | `/panel/proveedor/perfil` (`provider-profile-form.tsx`), `PUT /api/providers/me` con `providerProfileSchema` (descripción ≤1.000, teléfono, correo, experiencia, web) | PR-007 | OK (Supabase local) | 02/11/2026 |
 | REQ-PRO-02 | Elegir servicios desde catálogo | A | Implementado | Selector del catálogo (`GET /api/catalog/services`) con precio desde; se guarda en `provider_services` | PR-008 | OK (Supabase local) | 02/11/2026 |
 | REQ-PRO-03 | Ubicación base y radio de cobertura | A | Implementado | Comuna base (centroide de `communes`) y radio 1–100 km en `coverage_radius_km`. Sin vista previa del círculo en el mapa (solo texto) | PR-009 | OK (Supabase local) | 02/11/2026 |
-| REQ-PRO-04 | Documentos y galería en Storage | M | Diferido | Por decisión del cliente (02/11) la verificación se mantiene simple: se declaran los documentos sin subir archivos. Buckets `provider-docs` y `provider-gallery` quedan para la Solicitud de Cambio | PR-010 | No ejecutada | — |
+| REQ-PRO-04 | Documentos y galería en Storage | M | Diferido | Por decisión del cliente (02/11) la verificación se mantiene simple: se declaran los documentos sin subir archivos. Buckets `provider-docs` y `provider-gallery` quedan para la Solicitud de Cambio | PR-010 | Diferido (sin prueba: funcionalidad fuera del alcance de E3) | 15/11/2026 |
 | REQ-PRO-05 | Perfil público con insignia y reseñas | A | Implementado | Contacto oculto hasta cotización aceptada (RN-10) en `GET /api/providers/:id` (`canSeeContact`); aviso en modal y página. Sin galería (ver PRO-04) | PR-011 | OK (Supabase local) | 02/11/2026 |
 | REQ-PRO-06 | Disponibilidad semanal | M | Implementado | Horario semanal (`weekly_hours`) y switch disponible/no disponible. La exclusión en la distribución de solicitudes se aplica en el Bloque E (SOL-02) | PR-012 | OK (Supabase local) | 02/11/2026 |
 | REQ-VER-01 | Solicitud de verificación con documentos | A | Implementado (versión simple) | Wizard toma los datos del perfil y declara documentos; `POST /api/providers/me/verification` deja `en_revision` y crea `verification_items`. Sin archivos (ver PRO-04) | PR-013 | OK (Supabase local) | 02/11/2026 |
@@ -34,37 +34,39 @@
 | REQ-SOL-02 | Distribución a proveedores elegibles | A | Implementado | `eligible_providers_for_request` (RN-03), notificación `nueva_solicitud` a cada elegible; `provider_inbox` sin dirección ni cliente + RLS `requests_awarded_provider_select` | PR-021 | OK (Supabase local + pgTAP) | 02/11/2026 |
 | REQ-SOL-03 | Bandeja del proveedor | A | Implementado | `ProviderInboxPage`: disponibles / cotizadas / mis trabajos, filtros por urgencia y servicio, orden por fecha; excluye canceladas y adjudicadas a otro | PR-022 | OK (Supabase local) | 02/11/2026 |
 | REQ-SOL-04 | Estados de solicitud con historial | A | Implementado | RPC `transition_request`, `accept_quote`, `create_quote` y `confirm_completion` con actor y rol (D-11/D-22); historial en el detalle | PR-023 | OK (Supabase local + pgTAP) | 02/11/2026 |
-| REQ-SOL-05 | Cancelar solicitud e historial | M | Implementado | Cancelación solo del cliente en Abierta/Con cotizaciones con **motivo obligatorio** de una lista (Presupuesto alto, Proveedor encontrado por otra vía, Se resolvió el problema solo, Otro + detalle), guardado en la solicitud (migración 0013); aviso con el motivo a quienes cotizaron; filtro por estado en el historial | PR-024 | OK (unit + pgTAP + E2E demo) | 13/11/2026 |
+| REQ-SOL-05 | Cancelar solicitud e historial | M | Implementado | Cancelación solo del cliente en Abierta/Con cotizaciones con **motivo obligatorio** de una lista (Presupuesto alto, Proveedor encontrado por otra vía, Se resolvió el problema solo, Otro + detalle), guardado en la solicitud (migración 0013); aviso con el motivo a quienes cotizaron; filtro por estado en el historial | PR-024 | OK (unit + E2E demo + pgTAP ejecutado en Supabase local) | 15/11/2026 |
 | REQ-COT-01 | Cotización con monto CLP | A | Implementado | `create_quote`: solo elegibles y solicitudes abiertas; índice único parcial (RN-04); `expire_quotes` pasa a `vencida` al leer o aceptar | PR-025 | OK (Supabase local + pgTAP) | 02/11/2026 |
 | REQ-COT-02 | Comparar y aceptar cotizaciones | A | Implementado | Tabla comparativa (monto, IVA, plazo, vigencia, calificación, distancia, menor precio); aceptar rechaza el resto (RN-05), revela el contacto (RN-10) y notifica a todos; también rechazar | PR-026 | OK (Supabase local) | 02/11/2026 |
 | REQ-COT-03 | Marcar ejecución y completar | A | Implementado | Proveedor adjudicado marca En ejecución → Completada; el cliente confirma; auto-confirmación perezosa a los 7 días (sin `pg_cron`); la confirmación habilita el enlace a la reseña | PR-027 | OK (Supabase local) | 02/11/2026 |
 | REQ-MSG-01 | Chat en tiempo real | M | Implementado | Hilo por solicitud y proveedor que cotizó (`0011`), RLS de participantes, Realtime `postgres_changes`, historial persistente, no leídos y "Leído"; polling de 5 s en modo demo | PR-028 | OK (Supabase local: 352 ms y 1.061 ms de entrega) | 03/11/2026 |
-| REQ-MSG-02 | Adjuntos de imagen | B | Diferido | Mismo criterio que PRO-04 (sin Storage por ahora, decisión del cliente) | PR-029 | No ejecutada | — |
-| REQ-NOT-01 | Campana con notificaciones | M | Implementado | Campana suscrita por Realtime a sus `notifications` (polling 10 s en demo); eventos: solicitud elegible, cotización recibida/aceptada/rechazada, mensaje nuevo, cambio de estado y resultado de verificación | PR-030 | OK (Supabase local) | 03/11/2026 |
+| REQ-MSG-02 | Adjuntos de imagen | B | Diferido | Mismo criterio que PRO-04 (sin Storage por ahora, decisión del cliente) | PR-029 | Diferido (sin prueba: funcionalidad fuera del alcance de E3) | 15/11/2026 |
+| REQ-NOT-01 | Campana con notificaciones | M | Implementado | Campana suscrita por Realtime a sus `notifications` (polling 10 s en demo); eventos: solicitud elegible, cotización recibida/aceptada/rechazada, mensaje nuevo, cambio de estado y resultado de verificación | PR-030 | OK (Supabase local; unit `PR-030` en `notifications.test.ts` y rutas `/api/notifications`) | 15/11/2026 |
 | REQ-NOT-02 | Correos transaccionales | M | Implementado | Plantillas en español de Supabase Auth (`supabase/templates/`); cotización recibida, cotización aceptada y verificación por Resend (`RESEND_API_KEY`), sin clave se registran en el log | PR-031 | OK (Mailpit + log; Resend con mocks) | 03/11/2026 |
 | REQ-VAL-01 | Reseña 1–5 solo si Completada | A | Parcial | `reviews` en DB; sin restricción por estado | PR-032 | No ejecutada | — |
 | REQ-VAL-02 | Promedio y conteo automáticos | A | Implementado | Trigger `increment_provider_reviews` | PR-033 | No ejecutada | — |
 | REQ-VAL-03 | Respuesta del proveedor | B | Pendiente | — | PR-034 | No ejecutada | — |
-| REQ-IA-01 | Diagnóstico asistido con IA | A | Parcial | Chat con Gemini y fallback por reglas en `services/ai.ts`; sin diagnóstico estructurado ni prellenado | PR-035 | OK chat por reglas (demo) | 02/11/2026 |
-| REQ-IA-02 | Búsqueda semántica | M | Pendiente | `match_documents` RPC existe; sin endpoint | PR-036 | No ejecutada | — |
+| REQ-IA-01 | Diagnóstico asistido con IA | A | Parcial | Chat con Gemini y fallback por reglas en `services/ai.ts`; sin diagnóstico estructurado ni prellenado | PR-035 | OK chat por reglas y caída a reglas sin Gemini (unit `PR-035` en `ai.test.ts`) | 15/11/2026 |
+| REQ-IA-02 | Búsqueda semántica | M | Diferido | `match_documents` RPC existe; sin endpoint. Se difiere con el resto del módulo IA/RAG (ADR-0006) y va a la Solicitud de Cambio | PR-036 | Diferido (sin prueba) | 15/11/2026 |
 | REQ-IA-03 | Asistente RAG | M | Pendiente | Stub | PR-037 | No ejecutada | — |
 | REQ-IA-04 | Rate limit IA y contingencia | A | Pendiente | — | PR-038 | No ejecutada | — |
 | REQ-ADM-01 | Listar/suspender usuarios | M | Pendiente | — | PR-039 | No ejecutada | — |
 | REQ-ADM-02 | Moderar reseñas | M | Pendiente | — | PR-040 | No ejecutada | — |
-| REQ-ADM-03 | Panel de métricas | M | Parcial | Adelantado por solicitud de cambio: métricas comerciales del proveedor (`/api/providers/me/metrics`, RPC `provider_metrics`, migración 0014) y tarjeta de motivos de cancelación del admin (`/api/admin/metrics/cancellations`). Falta el panel global del admin (usuarios, solicitudes, proveedores) | PR-041 | OK (unit + E2E demo; pgTAP escrito, sin ejecutar) | 13/11/2026 |
+| REQ-ADM-03 | Panel de métricas | M | Parcial | Adelantado por solicitud de cambio: métricas comerciales del proveedor (`/api/providers/me/metrics`, RPC `provider_metrics`, migración 0014) y tarjeta de motivos de cancelación del admin (`/api/admin/metrics/cancellations`). Falta el panel global del admin (usuarios, solicitudes, proveedores) | PR-041 | OK (unit + E2E demo + pgTAP `provider_metrics_test.sql` ejecutado en Supabase local) | 15/11/2026 |
 | REQ-ADM-04 | Catálogo y documentos RAG | M | Pendiente | `categories`, `services` en DB; sin UI admin | PR-042 | No ejecutada | — |
 
 ## 2. Requerimientos no funcionales
 
 | ID | Resumen | Estado | Evidencia | Resultado |
 |---|---|---|---|---|
-| RNF-01 | Búsqueda ≤2 s p95 | Pendiente | — | No ejecutada |
-| RNF-04 | HTTPS, RLS, sin secretos en cliente, validación zod | Parcial | RLS ok, zod ok, JWT validado en backend; falta D-05 | No ejecutada |
-| RNF-05 | Consentimiento, privacidad, eliminación | Pendiente | — | No ejecutada |
-| RNF-06 | Responsiva desde 360 px | Parcial | Tailwind responsive; sin auditoría | No ejecutada |
-| RNF-07 | Lighthouse accesibilidad ≥90 | Pendiente | — | No ejecutada |
-| RNF-10 | TypeScript strict y CI verde | Implementado | `tsconfig.json` strict, CI pasa | OK |
-| RNF-11 | Español Chile, CLP, dd/mm/aaaa, America/Santiago | Parcial | Formatos en `shared/utils`; sin auditoría completa | No ejecutada |
+| RNF-01 | Búsqueda ≤2 s p95 | Implementado | `tests/real/rnf-01-busqueda.cjs`: 50 búsquedas, p95 41 ms, 0 errores (Supabase local) | OK (15/11/2026) |
+| RNF-04 | HTTPS, RLS, sin secretos en cliente, validación zod | Parcial | pgTAP 79/79, `access-control.test.ts`, zod en todos los endpoints; HTTPS por verificar en producción | OK local; HTTPS pendiente |
+| RNF-05 | Consentimiento, privacidad, eliminación | Parcial | Consentimiento obligatorio (`acceptTerms`, `accepted_terms_at`), `/privacidad` y `/terminos`; **eliminación de cuenta diferida** (baja por correo, Solicitud de Cambio) | OK consentimiento y privacidad; eliminación diferida |
+| RNF-06 | Responsiva desde 360 px | Implementado | `tests/e2e/rnf-06-responsive.spec.ts`: 12 pantallas sin scroll horizontal (tras D-38) | OK (15/11/2026) |
+| RNF-07 | Lighthouse accesibilidad ≥90 | Implementado | Lighthouse 12.6 móvil: 92–94 en inicio, buscar, registro y perfil (`evidencia/rnf/`) | OK (15/11/2026) |
+| RNF-10 | TypeScript strict y CI verde | Implementado | `tsconfig.json` strict; typecheck, lint, 736 tests unitarios y build en verde | OK |
+| RNF-11 | Español Chile, CLP, dd/mm/aaaa, America/Santiago | Implementado | `APP_TIME_ZONE` en `shared/utils/format.ts`; tests RNF-11 con `TZ=UTC` y `TZ=Asia/Tokyo` (tras D-39) | OK (15/11/2026) |
+
+Detalle, método y evidencias: [`E3-pruebas-no-funcionales.md`](E3-pruebas-no-funcionales.md).
 
 ## 3. Cambios de alcance respecto de E2
 
@@ -76,6 +78,8 @@
 | Monorepo | No especificado | pnpm 12 + Turborepo | Mejora de DX y compartición de tipos | Informativo |
 | Motivo de cancelación (REQ-SOL-05) | Motivo opcional en texto libre | Motivo obligatorio de una lista predefinida; "Otro" exige detalle | Alimenta las métricas del proveedor y del administrador con causas de abandono cuantificables | Solicitud de cambio "Motivo obligatorio de cancelación" (13/11/2026) |
 | Métricas comerciales del proveedor (adelanta parte de REQ-ADM-03, Sprint 3) | Sin métricas para el proveedor | Recibidas, enviadas, aceptadas, tasa de cotización, tasa de aceptación, tiempo de primera respuesta y monto aceptado, con rango de fechas y variación frente al período anterior de igual duración (mes en curso ↔ mismos días del mes anterior); motivos de cancelación para proveedor y admin | Mide el rendimiento comercial del proveedor; requiere el historial `request_deliveries` porque la bandeja se calcula en vivo | Solicitud de cambio "Métricas del proveedor" (13/11/2026) |
+| Eliminación de cuenta (RNF-05) | Eliminación de datos desde la app | Baja por correo (`/privacidad`) y eliminación por el administrador en Supabase Auth (cascada a `profiles`) | Priorización del flujo central; el derecho de cancelación (Ley 19.628) queda cubierto por un canal manual | Por incluir en la Solicitud de Cambio |
+| Búsqueda semántica (REQ-IA-02) | Búsqueda en texto libre con embeddings | Diferida | Se difiere con el módulo IA/RAG (ADR-0006) | Por incluir en la Solicitud de Cambio |
 
 ## 4. Defectos encontrados y corregidos
 
@@ -118,6 +122,8 @@
 | D-35 | Media | El panel del proveedor se parecía al del cliente y el navbar le ofrecía herramientas de cliente (reportado por el cliente) | Un solo diseño y menú para todos los roles | Panel propio (por cotizar, cotizaciones, trabajos, cobertura) y navbar por rol | Corregido | 09/11/2026 | feature/proveedor-panel |
 | D-36 | Baja | Con sesión iniciada, el menú móvil seguía ofreciendo "Ingresar" y "Crear cuenta" | El menú no consideraba la sesión | "Mi panel" y "Salir" con sesión | Corregido | 09/11/2026 | feature/proveedor-panel |
 | D-37 | Baja | El panel mostraba "Sin verificar" por un instante a proveedores verificados | La insignia usaba el estado por defecto mientras cargaba el perfil | Insignia solo cuando el perfil terminó de cargar (detectado en verificación real) | Corregido | 09/11/2026 | feature/proveedor-panel |
+| D-38 | Baja | A 360 px, `/panel/solicitudes` desbordaba 17 px en horizontal (RNF-06) | Los botones "Buscar proveedores" y "Nueva solicitud" usan `whitespace-nowrap` y quedaban en una sola fila | Botones apilados en móvil y en fila desde `sm` (`ClientRequestsPage.tsx`) | Corregido | 15/11/2026 | feature/pruebas-e3 |
+| D-39 | Media | Las fechas dependían de la zona horaria del navegador (RNF-11): las 23:00 del 30/09 en Chile se veían como 01-10 fuera de Chile | `formatDate` sin `timeZone`; el chat y la bandeja formateaban con `toLocaleString` | `APP_TIME_ZONE = "America/Santiago"`, `formatDateTime` compartido y usado en el chat y la bandeja | Corregido | 15/11/2026 | feature/pruebas-e3 |
 
 ## 5. URL de producción y credenciales demo
 

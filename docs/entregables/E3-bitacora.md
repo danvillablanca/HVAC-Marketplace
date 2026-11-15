@@ -274,3 +274,32 @@
 ### Lo que sigue
 - Ejecutar `pnpm db:reset && pnpm db:test` y los recorridos de `tests/real/` antes de desplegar.
 - Panel global del admin (resto de REQ-ADM-03).
+
+---
+
+## Bloque H — Pruebas funcionales y no funcionales — 15/11/2026
+
+**Rama:** `feature/pruebas-e3` (sale de `develop` en `e73f831`) · **Responsable:** José Villalobos
+
+### Lo hecho
+- **pgTAP contra Supabase local:** `pnpm db:test` da **79/79 OK**. Por primera vez se ejecutaron las pruebas de las migraciones 0013 (motivo de cancelación) y 0014 (métricas del proveedor), que antes estaban escritas pero sin ejecutar.
+- **Casos PR sin prueba:** PR-030 (campana) y PR-035 (chat por reglas) ya tenían tests; se agregó el ID al nombre (`notifications.test.ts`, rutas `/api/notifications`, `ai.test.ts`). PR-010, PR-029 y PR-036 quedan como **Diferido** con su justificación (Storage por decisión del cliente; IA-02 con el módulo IA/RAG, ADR-0006).
+- **Pruebas no funcionales** documentadas en [`E3-pruebas-no-funcionales.md`](E3-pruebas-no-funcionales.md):
+  - RNF-01: `tests/real/rnf-01-busqueda.cjs`, p95 de 41 ms sobre 50 búsquedas.
+  - RNF-06: `tests/e2e/rnf-06-responsive.spec.ts`, 12 pantallas a 360 px.
+  - RNF-07: Lighthouse, accesibilidad 92–94.
+  - RNF-11: tests de zona horaria y CLP.
+  - RNF-05: consentimiento y privacidad OK; eliminación de cuenta diferida.
+- Evidencias (capturas e informes de Lighthouse) en `docs/entregables/evidencia/rnf/`.
+
+### Problemas y solución
+- **D-38:** a 360 px, `/panel/solicitudes` desbordaba por los botones del encabezado; ahora se apilan en móvil.
+- **D-39:** las fechas usaban la zona horaria del navegador; ahora usan `America/Santiago` mediante `APP_TIME_ZONE` y un `formatDateTime` compartido.
+- `supabase start` falló por el health check del contenedor `edge_runtime`, que el proyecto no usa: se levanta con `npx supabase start -x edge-runtime`.
+- La suite E2E completa con muchos workers dio 9 fallos por tiempo agotado (páginas sin renderizar por la carga del equipo). Al repetirlos con `--workers=2` pasaron 11/11, así que no son regresiones.
+- Lighthouse en WSL creaba su perfil temporal dentro del repo, porque `TEMP` apunta a una ruta de Windows. Se borró y no se versiona.
+
+### Lo que sigue
+- Repetir RNF-01 y RNF-07 contra producción cuando esté desplegada, y verificar HTTPS (RNF-04).
+- Mejoras de accesibilidad de bajo esfuerzo (contraste, orden de encabezados) y carga diferida del mapa para el LCP.
+- Incluir en la Solicitud de Cambio la eliminación de cuenta (RNF-05) y la búsqueda semántica (IA-02).
