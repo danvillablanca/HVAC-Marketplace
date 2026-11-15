@@ -3,7 +3,7 @@ import { jsonRequest, withId } from "@/test/http";
 import { createNotification } from "@/services/notifications";
 import { PATCH, OPTIONS } from "./route";
 
-describe("PATCH /api/notifications/:id", () => {
+describe("PR-030 PATCH /api/notifications/:id", () => {
   it("marca una notificación como leída", async () => {
     const notif = await createNotification({
       userId: "test-cliente",
