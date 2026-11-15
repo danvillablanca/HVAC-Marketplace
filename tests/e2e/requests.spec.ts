@@ -93,3 +93,29 @@ test("solicitud directa desde el perfil de una empresa llega a su bandeja", asyn
   await expect(card).toBeVisible();
   await expect(page.getByText("Directa a tu empresa").first()).toBeVisible();
 });
+
+test("PR-024 SOL-05 cancelar exige un motivo de la lista", async ({ page, isMobile }) => {
+  test.skip(isMobile, "Se valida una vez en escritorio");
+  const ref = `cancelar-${Date.now()}`;
+
+  await loginAsDemo(page, "cliente");
+  await page.goto("/panel/solicitudes/nueva");
+  await page
+    .getByLabel("Descripción del problema o servicio")
+    .fill(`Solicitud que se cancelará ${ref}`);
+  await page.getByLabel("Comuna").selectOption("Macul");
+  await page.getByRole("button", { name: "Publicar solicitud" }).click();
+  await expect(page).toHaveURL(/\/panel\/solicitudes$/);
+  await page.getByText(ref).first().click();
+
+  await page.getByRole("button", { name: "Cancelar solicitud" }).click();
+  const confirm = page.getByRole("button", { name: "Confirmar cancelación" });
+  await expect(confirm).toBeDisabled();
+  await page.getByLabel(/Motivo de la cancelación/).selectOption("otro");
+  await expect(confirm).toBeDisabled();
+  await page.getByLabel(/Cuéntanos el motivo/).fill("Me cambié de domicilio");
+  await confirm.click();
+  await expect(page.getByTestId("cancel-reason-text")).toContainText(
+    "Motivo: Otro: Me cambié de domicilio",
+  );
+});

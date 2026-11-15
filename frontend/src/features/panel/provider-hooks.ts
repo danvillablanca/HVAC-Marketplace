@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  DateRange,
+  ProviderMetricsResponse,
   ProviderProfile,
   ProviderProfileInput,
   ServiceCatalogItem,
@@ -40,5 +42,16 @@ export function useServiceCatalog() {
     queryKey: ["service-catalog"],
     queryFn: () => apiFetch<ServiceCatalogItem[]>("/api/catalog/services"),
     staleTime: Infinity,
+  });
+}
+
+/** Métricas comerciales del proveedor en el rango, con el período anterior. */
+export function useProviderMetrics(range: DateRange) {
+  return useQuery({
+    queryKey: ["provider-metrics", range.from, range.to],
+    queryFn: () =>
+      apiFetch<ProviderMetricsResponse>(
+        `/api/providers/me/metrics?from=${range.from}&to=${range.to}`,
+      ),
   });
 }

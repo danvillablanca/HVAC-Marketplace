@@ -211,7 +211,9 @@ describe("PR-023/024/027 estados (SOL-04, SOL-05, COT-03, D-11)", () => {
       status: 400,
     });
     await transitionRequest(r.id, "en_ejecucion", near);
-    await expect(transitionRequest(r.id, "cancelada", client)).rejects.toMatchObject({
+    await expect(
+      transitionRequest(r.id, "cancelada", client, { reason: "presupuesto_alto" }),
+    ).rejects.toMatchObject({
       status: 400,
     });
     const done = await transitionRequest(r.id, "completada", near);
@@ -234,24 +236,49 @@ describe("PR-023/024/027 estados (SOL-04, SOL-05, COT-03, D-11)", () => {
     ]);
   });
 
-  it("solo el cliente cancela, con motivo, y se avisa a quienes cotizaron", async () => {
+  it("PR-024: solo el cliente cancela, con motivo obligatorio, y se avisa a quienes cotizaron", async () => {
     const r = await newRequest();
     await createQuote(quoteInput(r.id), near);
-    await expect(transitionRequest(r.id, "cancelada", otherClient)).rejects.toMatchObject({
+    const reason = { reason: "otro" as const, reasonDetail: "Ya lo resolví" };
+    await expect(transitionRequest(r.id, "cancelada", otherClient, reason)).rejects.toMatchObject({
       status: 403,
     });
-    await expect(transitionRequest(r.id, "cancelada", near)).rejects.toMatchObject({ status: 403 });
-    const cancelled = await transitionRequest(r.id, "cancelada", client, "Ya lo resolví");
+    await expect(transitionRequest(r.id, "cancelada", near, reason)).rejects.toMatchObject({
+      status: 403,
+    });
+    // SOL-05: sin motivo, o "otro" sin detalle, no se cancela.
+    await expect(transitionRequest(r.id, "cancelada", client)).rejects.toMatchObject({
+      status: 400,
+    });
+    await expect(
+      transitionRequest(r.id, "cancelada", client, { reason: "otro", reasonDetail: " " }),
+    ).rejects.toMatchObject({ status: 400 });
+    expect((await getRequestDetail(r.id, client)).status).toBe("con_cotizaciones");
+
+    const cancelled = await transitionRequest(r.id, "cancelada", client, reason);
     expect(cancelled.status).toBe("cancelada");
+    expect(cancelled.cancelReason).toBe("otro");
+    expect(cancelled.cancelReasonDetail).toBe("Ya lo resolví");
+    expect(cancelled.cancelledAt).toBeTruthy();
     const detail = await getRequestDetail(r.id, client);
     expect(detail.quotes[0].status).toBe("rechazada");
-    expect(detail.events.at(-1)?.note).toBe("Ya lo resolví");
+    expect(detail.events.at(-1)?.note).toBe("Otro: Ya lo resolví");
     expect(
       (await listNotifications(near.id)).some(
-        (n) => n.refId === r.id && n.body === "Motivo: Ya lo resolví",
+        (n) => n.refId === r.id && n.body === "Motivo: Otro: Ya lo resolví",
       ),
     ).toBe(true);
     await expect(createQuote(quoteInput(r.id), near2)).rejects.toMatchObject({ status: 400 });
+  });
+
+  it("PR-024: un motivo de la lista no exige detalle", async () => {
+    const r = await newRequest();
+    const cancelled = await transitionRequest(r.id, "cancelada", client, {
+      reason: "presupuesto_alto",
+    });
+    expect(cancelled.cancelReason).toBe("presupuesto_alto");
+    expect(cancelled.cancelReasonDetail).toBeNull();
+    expect((await getRequestDetail(r.id, client)).events.at(-1)?.note).toBe("Presupuesto alto");
   });
 
   it(`la confirmación es automática a los ${AUTO_CONFIRM_DAYS} días`, async () => {

@@ -1,10 +1,13 @@
 import { RequireRole } from "@/features/auth";
-import { AdminVerificationTable } from "@/features/panel";
+import { AdminCancellationMetrics, AdminVerificationTable } from "@/features/panel";
 
 export default function AdminVerificationPage() {
   return (
     <RequireRole roles={["admin"]}>
-      <AdminVerificationTable />
+      <div className="space-y-8">
+        <AdminVerificationTable />
+        <AdminCancellationMetrics />
+      </div>
     </RequireRole>
   );
 }

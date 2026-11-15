@@ -134,7 +134,7 @@ const sql = (q) =>
     await expectText(/Deja tu reseña/);
     return sql(`select string_agg(to_status::text, ' > ' order by created_at) from service_request_events where request_id='${requestId}'`);
   });
-  await step("PR-024 SOL-05 cancelar otra solicitud con motivo y filtrar historial", async () => {
+  await step("PR-024 SOL-05 cancelar otra solicitud con motivo obligatorio y filtrar historial", async () => {
     await page.goto(BASE + "/panel/solicitudes/nueva");
     await page.fill("#description", `Solicitud que se cancelará, ref ${STAMP}-b.`);
     await page.selectOption("#commune", "Macul");
@@ -142,9 +142,10 @@ const sql = (q) =>
     await page.waitForURL(/\/panel\/solicitudes$/);
     await page.getByText(`${STAMP}-b`).first().click();
     await page.getByRole("button", { name: "Cancelar solicitud" }).click();
-    await page.fill("#cancel-reason", "Ya lo resolví por mi cuenta");
+    await page.selectOption("#cancel-reason", "otro");
+    await page.fill("#cancel-detail", "Ya lo resolví por mi cuenta");
     await page.getByRole("button", { name: "Confirmar cancelación" }).click();
-    await expectText(/Ya lo resolví por mi cuenta/);
+    await expectText(/Motivo: Otro: Ya lo resolví por mi cuenta/);
     await page.goto(BASE + "/panel/solicitudes");
     await page.selectOption("#status-filter", "cancelada");
     await page.waitForTimeout(500);

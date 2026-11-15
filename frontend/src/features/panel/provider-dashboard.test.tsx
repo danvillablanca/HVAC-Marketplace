@@ -9,6 +9,7 @@ const hooks = vi.hoisted(() => ({
 }));
 vi.mock("./provider-hooks", () => ({
   useMyProviderProfile: () => ({ data: hooks.profile, isLoading: false }),
+  useProviderMetrics: () => ({ data: undefined, isLoading: true, error: null }),
 }));
 vi.mock("@/features/requests/hooks", () => ({
   useServiceRequests: () => ({ data: hooks.requests }),

@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ProviderSummary, VerificationDecisionInput } from "@hvac/shared";
+import type {
+  CancellationMetricsResponse,
+  DateRange,
+  ProviderSummary,
+  VerificationDecisionInput,
+} from "@hvac/shared";
 import { apiFetch } from "@/lib/api";
 
 /** Lista proveedores pendientes de verificación. */
@@ -22,5 +27,16 @@ export function useDecideVerification() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "verifications"] });
     },
+  });
+}
+
+/** Motivos de cancelación de toda la plataforma en el rango. */
+export function useCancellationMetrics(range: DateRange) {
+  return useQuery({
+    queryKey: ["admin", "cancellation-metrics", range.from, range.to],
+    queryFn: () =>
+      apiFetch<CancellationMetricsResponse>(
+        `/api/admin/metrics/cancellations?from=${range.from}&to=${range.to}`,
+      ),
   });
 }

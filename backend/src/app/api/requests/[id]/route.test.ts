@@ -31,16 +31,38 @@ describe("GET /api/requests/[id]", () => {
 });
 
 describe("PATCH /api/requests/[id]", () => {
-  it("cancela una solicitud abierta", async () => {
+  it("PR-024: no cancela sin motivo (SOL-05)", async () => {
     const id = await createRequest();
     const res = await PATCH(
       jsonRequest("PATCH", `/api/requests/${id}`, { status: "cancelada" }),
+      withId(id),
+    );
+    expect(res.status).toBe(422);
+  });
+
+  it("PR-024: 'otro' sin detalle responde 422", async () => {
+    const id = await createRequest();
+    const res = await PATCH(
+      jsonRequest("PATCH", `/api/requests/${id}`, { status: "cancelada", reason: "otro" }),
+      withId(id),
+    );
+    expect(res.status).toBe(422);
+  });
+
+  it("PR-024: cancela una solicitud abierta con motivo", async () => {
+    const id = await createRequest();
+    const res = await PATCH(
+      jsonRequest("PATCH", `/api/requests/${id}`, {
+        status: "cancelada",
+        reason: "proveedor_otra_via",
+      }),
       withId(id),
     );
 
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.status).toBe("cancelada");
+    expect(body.data.cancelReason).toBe("proveedor_otra_via");
   });
 
   it("OPTIONS responde 204", () => {

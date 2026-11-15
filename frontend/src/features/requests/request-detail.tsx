@@ -1,11 +1,18 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2, Clock, MapPin, Star } from "lucide-react";
-import type { Quote, ServiceRequestDetail } from "@hvac/shared";
-import { formatCLP, formatDate } from "@hvac/shared";
+import type { CancelReason, Quote, ServiceRequestDetail } from "@hvac/shared";
+import {
+  CANCEL_REASON_LABELS,
+  CANCEL_REASONS,
+  cancelReasonText,
+  formatCLP,
+  formatDate,
+} from "@hvac/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/auth-context";
@@ -63,7 +70,8 @@ export function RequestDetail({ requestId }: RequestDetailProps) {
   const confirm = useConfirmCompletion();
   const [actionError, setActionError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
-  const [cancelReason, setCancelReason] = useState("");
+  const [cancelReason, setCancelReason] = useState<CancelReason | "">("");
+  const [cancelDetail, setCancelDetail] = useState("");
 
   if (isLoading) return <Skeleton className="h-64 w-full rounded-xl" />;
   if (error || !detail) {
@@ -90,6 +98,12 @@ export function RequestDetail({ requestId }: RequestDetailProps) {
   const open = detail.status === "abierta" || detail.status === "con_cotizaciones";
   const accepted = detail.quotes.find((q) => q.status === "aceptada");
   const pendingConfirmation = detail.status === "completada" && !detail.clientConfirmedAt;
+  // SOL-05: motivo obligatorio; "Otro" exige describirlo.
+  const cancelError = !cancelReason
+    ? "Selecciona el motivo de la cancelación."
+    : cancelReason === "otro" && cancelDetail.trim().length < 3
+      ? "Describe el motivo (mínimo 3 caracteres)."
+      : null;
 
   return (
     <div className="space-y-6">
@@ -135,29 +149,62 @@ export function RequestDetail({ requestId }: RequestDetailProps) {
             </Button>
           )}
           {isOwner && cancelling && (
-            <div className="space-y-2 rounded-md border border-border p-3">
-              <label htmlFor="cancel-reason" className="text-sm font-medium">
-                Motivo (opcional)
-              </label>
-              <Textarea
-                id="cancel-reason"
-                rows={2}
-                maxLength={500}
-                value={cancelReason}
-                onChange={(e) => setCancelReason(e.target.value)}
-                placeholder="Ej: ya resolví el problema"
-              />
+            <div className="space-y-3 rounded-md border border-border p-3">
+              <div className="space-y-1">
+                <label htmlFor="cancel-reason" className="text-sm font-medium">
+                  Motivo de la cancelación <span className="text-destructive">*</span>
+                </label>
+                <Select
+                  id="cancel-reason"
+                  value={cancelReason}
+                  aria-required="true"
+                  onChange={(e) => setCancelReason(e.target.value as CancelReason | "")}
+                >
+                  <option value="">Selecciona un motivo</option>
+                  {CANCEL_REASONS.map((reason) => (
+                    <option key={reason} value={reason}>
+                      {CANCEL_REASON_LABELS[reason]}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              {cancelReason && (
+                <div className="space-y-1">
+                  <label htmlFor="cancel-detail" className="text-sm font-medium">
+                    {cancelReason === "otro" ? (
+                      <>
+                        Cuéntanos el motivo <span className="text-destructive">*</span>
+                      </>
+                    ) : (
+                      "Comentario (opcional)"
+                    )}
+                  </label>
+                  <Textarea
+                    id="cancel-detail"
+                    rows={2}
+                    maxLength={500}
+                    value={cancelDetail}
+                    onChange={(e) => setCancelDetail(e.target.value)}
+                    placeholder={
+                      cancelReason === "otro" ? "Ej: me cambié de domicilio" : "Opcional"
+                    }
+                  />
+                </div>
+              )}
+              {cancelError && <p className="text-xs text-muted-foreground">{cancelError}</p>}
               <div className="flex gap-2">
                 <Button
                   variant="destructive"
                   size="sm"
-                  disabled={transition.isPending}
+                  disabled={transition.isPending || Boolean(cancelError)}
                   onClick={() =>
+                    cancelReason &&
                     run(() =>
                       transition.mutateAsync({
                         id: requestId,
                         status: "cancelada",
-                        note: cancelReason.trim() || undefined,
+                        reason: cancelReason,
+                        reasonDetail: cancelDetail.trim() || undefined,
                       }),
                     ).then(() => setCancelling(false))
                   }
@@ -169,6 +216,13 @@ export function RequestDetail({ requestId }: RequestDetailProps) {
                 </Button>
               </div>
             </div>
+          )}
+          {detail.status === "cancelada" && detail.cancelReason && (
+            <p className="text-sm text-muted-foreground" data-testid="cancel-reason-text">
+              Cancelada
+              {detail.cancelledAt && ` el ${formatDate(detail.cancelledAt)}`}. Motivo:{" "}
+              {cancelReasonText(detail.cancelReason, detail.cancelReasonDetail)}
+            </p>
           )}
           {isOwner && pendingConfirmation && (
             <div className="space-y-2 rounded-md border border-primary/40 bg-primary/5 p-3">
