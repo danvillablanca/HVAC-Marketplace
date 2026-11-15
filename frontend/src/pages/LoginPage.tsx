@@ -1,6 +1,11 @@
+import { useLocation } from "react-router-dom";
 import { AuthForm } from "@/features/auth";
 
 export default function LoginPage() {
+  const location = useLocation();
+  const passwordReset = Boolean(
+    (location.state as { passwordReset?: boolean } | null)?.passwordReset,
+  );
   return (
     <div className="container-page flex min-h-[70vh] items-center justify-center py-16">
       <div className="w-full max-w-md">
@@ -10,6 +15,14 @@ export default function LoginPage() {
             Ingresa para gestionar tus solicitudes y tu perfil de proveedor.
           </p>
         </div>
+        {passwordReset && (
+          <p
+            role="status"
+            className="mb-4 rounded-md border border-border bg-secondary/50 px-3 py-2 text-sm"
+          >
+            Tu contraseña se actualizó. Ingresa con la nueva contraseña.
+          </p>
+        )}
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
           <AuthForm mode="login" />
         </div>

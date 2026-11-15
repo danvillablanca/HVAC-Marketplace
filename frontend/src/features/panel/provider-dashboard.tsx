@@ -1,134 +1,165 @@
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import {
+  AlertCircle,
   BadgeCheck,
+  Briefcase,
+  CheckCircle2,
+  Circle,
+  Clock,
   Eye,
-  MessageSquare,
+  Inbox,
+  MapPin,
   Pencil,
-  Phone,
+  Send,
   ShieldCheck,
-  Star,
-  Users,
+  XCircle,
 } from "lucide-react";
-import { formatCLP, formatDate, type LeadStatus } from "@hvac/shared";
-import { Badge, type BadgeProps } from "@/components/ui/badge";
+import type { ProviderProfile, ProviderVerificationStatus } from "@hvac/shared";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/features/auth";
+import { useServiceRequests } from "@/features/requests/hooks";
+import { useMyProviderProfile } from "./provider-hooks";
+import { ProviderMetrics } from "./provider-metrics";
 
-interface Metric {
-  label: string;
-  value: string;
-  hint: string;
-  icon: typeof Eye;
-}
-
-const METRICS: Metric[] = [
-  { label: "Visitas al perfil", value: "1.248", hint: "+12% vs mes anterior", icon: Eye },
-  { label: "Contactos", value: "86", hint: "+8% vs mes anterior", icon: Phone },
-  { label: "Rating promedio", value: "4,8", hint: "132 resenas verificadas", icon: Star },
-  { label: "Resenas", value: "132", hint: "+5 este mes", icon: MessageSquare },
-];
-
-interface DemoLead {
-  id: string;
-  client: string;
-  service: string;
-  amount: number | null;
-  status: LeadStatus;
-  createdAt: string;
-}
-
-const LEADS: DemoLead[] = [
+const STATUS_BADGE: Record<
+  ProviderVerificationStatus,
   {
-    id: "L-2041",
-    client: "Constructora Andes",
-    service: "Ventilacion industrial y comercial",
-    amount: 1850000,
-    status: "nuevo",
-    createdAt: "2026-09-22T10:30:00.000Z",
+    label: string;
+    variant: "success" | "warning" | "destructive" | "secondary";
+    icon: typeof BadgeCheck;
+    hint: string;
+  }
+> = {
+  verificado: {
+    label: "Verificado",
+    variant: "success",
+    icon: BadgeCheck,
+    hint: "Apareces en las búsquedas y puedes cotizar.",
   },
-  {
-    id: "L-2038",
-    client: "Clinica Los Robles",
-    service: "Salas limpias y laboratorios",
-    amount: 4200000,
-    status: "contactado",
-    createdAt: "2026-09-20T14:05:00.000Z",
+  en_revision: {
+    label: "En revisión",
+    variant: "warning",
+    icon: Clock,
+    hint: "El equipo ASHRAE está revisando tus antecedentes.",
   },
-  {
-    id: "L-2032",
-    client: "Familia Perez",
-    service: "Venta e instalacion de equipos Split",
-    amount: 289990,
-    status: "cotizado",
-    createdAt: "2026-09-18T09:15:00.000Z",
+  pendiente: {
+    label: "Sin verificar",
+    variant: "secondary",
+    icon: AlertCircle,
+    hint: "Envía tus antecedentes para aparecer en las búsquedas.",
   },
-  {
-    id: "L-2019",
-    client: "Retail Plaza Norte",
-    service: "Montaje y mantenimiento",
-    amount: 640000,
-    status: "cerrado",
-    createdAt: "2026-09-11T16:40:00.000Z",
+  rechazado: {
+    label: "Rechazado",
+    variant: "destructive",
+    icon: XCircle,
+    hint: "Revisa el motivo, corrige tu perfil y vuelve a enviarlo.",
   },
-  {
-    id: "L-2007",
-    client: "Oficinas Central Park",
-    service: "Inspeccion tecnica HVAC",
-    amount: null,
-    status: "perdido",
-    createdAt: "2026-09-04T12:00:00.000Z",
-  },
-];
-
-const STATUS_LABEL: Record<LeadStatus, string> = {
-  nuevo: "Nuevo",
-  contactado: "Contactado",
-  cotizado: "Cotizado",
-  cerrado: "Cerrado",
-  perdido: "Perdido",
 };
 
-const STATUS_VARIANT: Record<LeadStatus, BadgeProps["variant"]> = {
-  nuevo: "default",
-  contactado: "secondary",
-  cotizado: "warning",
-  cerrado: "success",
-  perdido: "destructive",
+const NEXT_STEP: Record<string, string> = {
+  aceptada: "Siguiente paso: marcar en ejecución",
+  en_ejecucion: "Siguiente paso: marcar como completada",
+  completada: "Esperando confirmación del cliente",
 };
 
+/** Panel del proveedor: su bandeja, sus cotizaciones y sus trabajos (no el panel del cliente). */
 export function ProviderDashboard() {
   const { user } = useAuth();
-  const firstName = user?.fullName?.split(" ")[0] ?? "proveedor";
+  const { data: requests } = useServiceRequests();
+  const { data: profile, isLoading: profileLoading } = useMyProviderProfile();
+  const status = STATUS_BADGE[profile?.verificationStatus ?? "pendiente"];
+  const name = profile?.legalName ?? user?.fullName ?? "tu empresa";
+
+  // Mismos grupos que la bandeja (ProviderInboxPage).
+  const all = requests ?? [];
+  const toQuote = all.filter(
+    (r) =>
+      ["abierta", "con_cotizaciones"].includes(r.status) &&
+      r.myQuoteStatus !== "enviada" &&
+      r.myQuoteStatus !== "aceptada",
+  );
+  const quoted = all.filter((r) => r.myQuoteStatus === "enviada");
+  const jobs = all.filter((r) => r.myQuoteStatus === "aceptada");
+  const active = jobs.filter((r) => r.status !== "completada" || !r.clientConfirmedAt);
+  const done = jobs.filter((r) => r.status === "completada");
+
+  const metrics = [
+    {
+      label: "Por cotizar",
+      value: toQuote.length,
+      hint: "Solicitudes en tu cobertura",
+      icon: Inbox,
+    },
+    {
+      label: "Cotizaciones enviadas",
+      value: quoted.length,
+      hint: "Esperando respuesta",
+      icon: Send,
+    },
+    {
+      label: "Trabajos en curso",
+      value: active.length,
+      hint: "Adjudicados a tu empresa",
+      icon: Briefcase,
+    },
+    { label: "Completados", value: done.length, hint: "Trabajos terminados", icon: CheckCircle2 },
+  ];
 
   return (
     <section className="container-page space-y-8 py-10">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">Hola, {firstName}</h1>
-          <p className="mt-1 text-muted-foreground">
-            Resumen de tu actividad y solicitudes recientes en el marketplace.
-          </p>
+          <p className="text-sm text-muted-foreground">Panel de proveedor</p>
+          <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold sm:text-3xl">
+            {name}
+            {/* Sin badge mientras carga: evita mostrar "Sin verificar" por un instante. */}
+            {!profileLoading && (
+              <Badge variant={status.variant}>
+                <status.icon className="size-3" /> {status.label}
+              </Badge>
+            )}
+          </h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline">
-            <Link to="/para-proveedores">
-              <Pencil className="size-4" />
-              Editar perfil
+          <Button asChild>
+            <Link to="/panel/proveedor/bandeja">
+              <Inbox className="size-4" />
+              Ir a la bandeja
             </Link>
           </Button>
-          <Button asChild>
-            <Link to="/panel/proveedor/verificacion">
-              <ShieldCheck className="size-4" />
-              Verificacion
+          <Button asChild variant="outline">
+            <Link to="/panel/proveedor/perfil">
+              <Pencil className="size-4" />
+              {profile ? "Editar perfil" : "Completar perfil"}
             </Link>
           </Button>
         </div>
       </header>
 
+      {!profileLoading && !profile && (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardContent className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-semibold">Completa el perfil de tu empresa</p>
+              <p className="text-sm text-muted-foreground">
+                Agrega tus servicios, comuna y radio de cobertura para poder verificarte y recibir
+                solicitudes.
+              </p>
+            </div>
+            <Button asChild>
+              <Link to="/panel/proveedor/perfil">Completar perfil</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {!profileLoading && profile !== undefined && <SearchVisibility profile={profile} />}
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {METRICS.map((metric, index) => (
+        {metrics.map((metric, index) => (
           <motion.div
             key={metric.label}
             initial={{ opacity: 0, y: 12 }}
@@ -151,63 +182,71 @@ export function ProviderDashboard() {
         ))}
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <CardTitle>Solicitudes recientes</CardTitle>
-            <CardDescription>Leads y contactos de los ultimos 30 dias.</CardDescription>
-          </div>
-          <Badge variant="outline" className="w-fit">
-            <Users className="size-3" /> {LEADS.length} activos
-          </Badge>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] border-collapse text-sm">
-              <caption className="sr-only">Solicitudes recientes del proveedor</caption>
-              <thead>
-                <tr className="border-b border-border text-left text-muted-foreground">
-                  <th scope="col" className="py-2 pr-4 font-medium">
-                    Cliente
-                  </th>
-                  <th scope="col" className="py-2 pr-4 font-medium">
-                    Servicio
-                  </th>
-                  <th scope="col" className="py-2 pr-4 font-medium">
-                    Monto estimado
-                  </th>
-                  <th scope="col" className="py-2 pr-4 font-medium">
-                    Fecha
-                  </th>
-                  <th scope="col" className="py-2 font-medium">
-                    Estado
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {LEADS.map((lead) => (
-                  <tr key={lead.id} className="border-b border-border/60 last:border-0">
-                    <td className="py-3 pr-4">
-                      <p className="font-medium text-foreground">{lead.client}</p>
-                      <p className="text-xs text-muted-foreground">{lead.id}</p>
-                    </td>
-                    <td className="py-3 pr-4 text-muted-foreground">{lead.service}</td>
-                    <td className="py-3 pr-4">{formatCLP(lead.amount)}</td>
-                    <td className="py-3 pr-4 text-muted-foreground">
-                      {formatDate(lead.createdAt)}
-                    </td>
-                    <td className="py-3">
-                      <Badge variant={STATUS_VARIANT[lead.status]}>
-                        {STATUS_LABEL[lead.status]}
-                      </Badge>
-                    </td>
-                  </tr>
+      {profile && <ProviderMetrics />}
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Solicitudes nuevas para cotizar</CardTitle>
+            <CardDescription>Clientes de tu zona esperando cotización.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {toQuote.length === 0 ? (
+              <p className="py-4 text-sm text-muted-foreground">
+                No hay solicitudes nuevas. Te avisaremos cuando llegue una.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {toQuote.slice(0, 5).map((req) => (
+                  <li key={req.id} className="rounded-md border border-border p-3">
+                    <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                      {req.serviceName ?? req.equipment} — {req.commune ?? "Sin ubicación"}
+                      {req.isDirect && <Badge>Directa a tu empresa</Badge>}
+                    </p>
+                    <p className="line-clamp-1 text-xs text-muted-foreground">
+                      {req.description}
+                      {req.distanceKm != null && ` · ~${req.distanceKm} km`}
+                    </p>
+                  </li>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+              </ul>
+            )}
+            <Button asChild variant="outline" size="sm" className="mt-4">
+              <Link to="/panel/proveedor/bandeja">Cotizar en la bandeja</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Trabajos en curso</CardTitle>
+            <CardDescription>Solicitudes donde el cliente aceptó tu cotización.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {active.length === 0 ? (
+              <p className="py-4 text-sm text-muted-foreground">
+                Cuando un cliente acepte tu cotización, el trabajo aparecerá aquí.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {active.slice(0, 5).map((req) => (
+                  <li key={req.id}>
+                    <Link
+                      to={`/panel/solicitudes/${req.id}`}
+                      className="block rounded-md border border-border p-3 transition-colors hover:bg-muted/50"
+                    >
+                      <p className="text-sm font-medium">
+                        {req.serviceName ?? req.equipment} — {req.commune ?? "Sin ubicación"}
+                      </p>
+                      <p className="text-xs text-primary">{NEXT_STEP[req.status] ?? req.status}</p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
@@ -216,36 +255,118 @@ export function ProviderDashboard() {
               <ShieldCheck className="size-5 text-primary" />
               Estado de verificacion
             </CardTitle>
-            <CardDescription>Tu perfil esta visible con el sello ASHRAE.</CardDescription>
+            <CardDescription>{status.hint}</CardDescription>
           </CardHeader>
-          <CardContent className="flex items-center justify-between gap-4">
-            <Badge variant="success">
-              <BadgeCheck className="size-3" /> Verificado
-            </Badge>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/panel/proveedor/verificacion">Revisar antecedentes</Link>
-            </Button>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <Badge variant={status.variant}>
+                <status.icon className="size-3" /> {status.label}
+              </Badge>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/panel/proveedor/verificacion">
+                  {profile?.verificationStatus === "verificado"
+                    ? "Ver antecedentes"
+                    : "Verificarme"}
+                </Link>
+              </Button>
+            </div>
+            {profile?.verificationStatus === "rechazado" && profile.verificationNote && (
+              <p className="text-sm text-destructive">Motivo: {profile.verificationNote}</p>
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Star className="size-5 text-warning" />
-              Reputacion
+              <MapPin className="size-5 text-primary" />
+              Cobertura y disponibilidad
             </CardTitle>
-            <CardDescription>Responde rapido para mantener tu posicion.</CardDescription>
+            <CardDescription>
+              {profile
+                ? `${profile.services.length} servicios · hasta ${profile.coverageRadiusKm} km desde ${profile.commune}`
+                : "Define tus servicios y tu zona de atención."}
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">
-              Tiempo de respuesta promedio: <span className="font-medium text-foreground">3 h</span>
-            </p>
+            <Badge variant={profile?.isAvailable ? "success" : "secondary"}>
+              {profile?.isAvailable ? "Disponible para nuevos trabajos" : "No disponible"}
+            </Badge>
             <Button asChild variant="outline" size="sm">
-              <Link to="/panel/proveedor/verificacion">Mejorar perfil</Link>
+              <Link to="/panel/proveedor/perfil">Editar</Link>
             </Button>
           </CardContent>
         </Card>
       </div>
     </section>
+  );
+}
+
+/** Explica al proveedor si aparece en la busqueda y que le falta (VER-03, PRO-03, PRO-06). */
+function SearchVisibility({ profile }: { profile: ProviderProfile | null }) {
+  const status = profile?.verificationStatus;
+  const checks = [
+    {
+      ok: Boolean(profile),
+      label: "Perfil completo con servicios y comuna",
+      action: !profile ? { to: "/panel/proveedor/perfil", label: "Completar perfil" } : null,
+    },
+    {
+      ok: status === "verificado",
+      label:
+        status === "en_revision"
+          ? "Verificación en revisión por el equipo ASHRAE"
+          : status === "rechazado"
+            ? "Verificación rechazada: corrige y vuelve a enviar"
+            : "Empresa verificada",
+      action:
+        profile && (status === "pendiente" || status === "rechazado")
+          ? { to: "/panel/proveedor/verificacion", label: "Enviar a verificación" }
+          : null,
+    },
+    {
+      ok: Boolean(profile?.isAvailable),
+      label: "Marcada como disponible",
+      action:
+        profile && !profile.isAvailable
+          ? { to: "/panel/proveedor/perfil", label: "Cambiar disponibilidad" }
+          : null,
+    },
+  ];
+  const visible = checks.every((c) => c.ok);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Eye className="size-5 text-primary" />
+          {visible ? "Tu empresa aparece en la búsqueda" : "¿Por qué no apareces en la búsqueda?"}
+        </CardTitle>
+        <CardDescription>
+          Solo se muestran empresas verificadas, y a clientes que estén dentro de tu radio de
+          cobertura
+          {profile ? ` (${profile.coverageRadiusKm} km desde ${profile.commune})` : ""}.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-2">
+          {checks.map((check) => (
+            <li key={check.label} className="flex flex-wrap items-center gap-2 text-sm">
+              {check.ok ? (
+                <CheckCircle2 className="size-4 text-success" />
+              ) : (
+                <Circle className="size-4 text-muted-foreground" />
+              )}
+              <span className={check.ok ? "" : "text-muted-foreground"}>{check.label}</span>
+              {check.action && (
+                <Link to={check.action.to} className="font-medium text-primary hover:underline">
+                  {check.action.label}
+                </Link>
+              )}
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }

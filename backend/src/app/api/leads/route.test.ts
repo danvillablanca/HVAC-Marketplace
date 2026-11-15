@@ -18,11 +18,16 @@ describe("GET /api/leads", () => {
       res.json(),
     );
 
-    const res = await GET();
+    const res = await GET(jsonRequest("GET", "/api/leads"));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body.data)).toBe(true);
     expect(body.data.some((lead: { id: string }) => lead.id === created.data.id)).toBe(true);
+  });
+
+  it("rechaza sin autenticación", async () => {
+    const res = await GET(jsonRequest("GET", "/api/leads", undefined, { noAuth: true }));
+    expect(res.status).toBe(401);
   });
 });
 
@@ -49,6 +54,11 @@ describe("POST /api/leads", () => {
     expect(res.status).toBe(422);
     const body = await res.json();
     expect(body.error.code).toBe("validation_error");
+  });
+
+  it("rechaza sin autenticación", async () => {
+    const res = await POST(jsonRequest("POST", "/api/leads", validLeadBody(), { noAuth: true }));
+    expect(res.status).toBe(401);
   });
 
   it("OPTIONS responde 204 con CORS", () => {

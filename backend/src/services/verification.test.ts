@@ -30,7 +30,7 @@ describe("decideVerification (fallback demo)", () => {
       decision: "verificado",
     };
 
-    const result = await decideVerification(input);
+    const result = await decideVerification(input, "test-admin");
 
     expect(result).toEqual({ providerId: "p-termica-norte", status: "verificado" });
     expect(getDemoProvider("p-termica-norte")?.verificationStatus).toBe("verificado");
@@ -42,7 +42,7 @@ describe("decideVerification (fallback demo)", () => {
       decision: "rechazado",
     };
 
-    const error = await decideVerification(input).catch((err) => err);
+    const error = await decideVerification(input, "test-admin").catch((err) => err);
     expect(error).toBeInstanceOf(HttpError);
     expect(error.status).toBe(404);
     expect(error.code).toBe("not_found");

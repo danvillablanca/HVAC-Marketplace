@@ -7,6 +7,7 @@ import {
   Phone,
   ShieldAlert,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { formatCLP, formatPhone } from "@hvac/shared";
 import { useProvider, useProviderReviews } from "@/features/providers/hooks";
 import {
@@ -123,6 +124,12 @@ export function ProviderModal({ providerId, open, onOpenChange }: ProviderModalP
               <section>
                 <h3 className="text-sm font-semibold text-foreground">Contacto</h3>
                 <div className="mt-2 flex flex-wrap gap-2">
+                  {provider.contactHidden && (
+                    <p className="text-sm text-muted-foreground">
+                      El teléfono y el correo se muestran cuando aceptas una cotización de este
+                      proveedor.
+                    </p>
+                  )}
                   {provider.phone && (
                     <>
                       <Button asChild>
@@ -154,6 +161,9 @@ export function ProviderModal({ providerId, open, onOpenChange }: ProviderModalP
                       </a>
                     </Button>
                   )}
+                  <Button asChild variant="link">
+                    <Link to={`/proveedor/${provider.id}`}>Ver perfil completo</Link>
+                  </Button>
                 </div>
               </section>
 

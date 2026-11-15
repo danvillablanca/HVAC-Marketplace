@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import {
@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth";
+import { useMyProviderProfile, useRequestVerification } from "./provider-hooks";
 
 const STEPS = [
   { title: "Datos de empresa", description: "Identificacion legal del proveedor" },
@@ -68,6 +69,31 @@ export function VerificationWizard() {
     boleta: false,
   });
   const [documentsError, setDocumentsError] = useState<string | null>(null);
+  const { data: profile } = useMyProviderProfile();
+  const request = useRequestVerification();
+
+  // Los datos de empresa vienen del perfil; el wizard solo los confirma.
+  useEffect(() => {
+    if (!profile) return;
+    setForm({
+      legalName: profile.legalName,
+      rut: profile.rut,
+      phone: profile.phone,
+      email: profile.email,
+    });
+    if (profile.verificationStatus === "en_revision") setSubmitted(true);
+  }, [profile]);
+
+  async function submit() {
+    try {
+      await request.mutateAsync({
+        documents: DOCUMENTS.filter((d) => documents[d.id]).map((d) => d.label),
+      });
+      setSubmitted(true);
+    } catch {
+      // el error se muestra desde request.error
+    }
+  }
 
   const progress = submitted ? 100 : Math.round(((step + 1) / STEPS.length) * 100);
 
@@ -118,6 +144,51 @@ export function VerificationWizard() {
 
   function previousStep() {
     setStep((current) => Math.max(0, current - 1));
+  }
+
+  // Sin perfil no hay a quien verificar: primero se completa el perfil.
+  if (profile === null) {
+    return (
+      <section className="container-page py-10">
+        <Card className="mx-auto max-w-xl">
+          <CardHeader>
+            <CardTitle>Primero completa tu perfil</CardTitle>
+            <CardDescription>
+              Necesitamos los datos de tu empresa, tus servicios y tu cobertura antes de revisar tus
+              antecedentes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link to="/panel/proveedor/perfil">Completar perfil</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
+    );
+  }
+
+  if (profile?.verificationStatus === "verificado") {
+    return (
+      <section className="container-page py-10">
+        <Card className="mx-auto max-w-xl text-center">
+          <CardHeader className="items-center">
+            <span className="grid size-12 place-items-center rounded-full bg-success/15 text-success">
+              <BadgeCheck className="size-6" />
+            </span>
+            <CardTitle className="mt-2 text-2xl">Empresa verificada</CardTitle>
+            <CardDescription>
+              Tu perfil tiene la insignia “Verificado” y aparece en las búsquedas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link to="/panel/proveedor">Volver al panel</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
+    );
   }
 
   if (submitted) {
@@ -425,6 +496,17 @@ export function VerificationWizard() {
             )}
           </motion.div>
 
+          {request.error && (
+            <p role="alert" className="mt-6 text-sm text-destructive">
+              {request.error instanceof Error ? request.error.message : "No se pudo enviar."}
+            </p>
+          )}
+          {profile?.verificationStatus === "rechazado" && profile.verificationNote && (
+            <p role="alert" className="mt-6 text-sm text-destructive">
+              Tu solicitud anterior fue rechazada. Motivo: {profile.verificationNote}
+            </p>
+          )}
+
           <div className="mt-8 flex items-center justify-between gap-2">
             <Button variant="ghost" onClick={previousStep} disabled={step === 0}>
               <ChevronLeft className="size-4" />
@@ -436,9 +518,9 @@ export function VerificationWizard() {
                 <ChevronRight className="size-4" />
               </Button>
             ) : (
-              <Button onClick={() => setSubmitted(true)}>
+              <Button onClick={submit} disabled={request.isPending}>
                 <Send className="size-4" />
-                Enviar a revision
+                {request.isPending ? "Enviando..." : "Enviar a revision"}
               </Button>
             )}
           </div>

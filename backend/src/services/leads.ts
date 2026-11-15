@@ -1,20 +1,30 @@
 import { randomUUID } from "node:crypto";
-import type { Lead, LeadCreateInput, LeadUpdateInput } from "@hvac/shared";
+import type { Lead, LeadCreateInput, LeadUpdateInput, UserRole } from "@hvac/shared";
 import { getServiceClient } from "../lib/supabase";
+import { isDemoMode } from "../lib/env";
 import { HttpError } from "../lib/http";
 import { mapLeadRow } from "./mappers";
 
-const DEMO_CLIENT_ID = "00000000-0000-0000-0000-000000000000";
 const demoLeads = new Map<string, Lead>();
 
-export async function listLeads(): Promise<Lead[]> {
+export async function listLeads(userId: string, role: UserRole): Promise<Lead[]> {
   const supabase = getServiceClient();
-  if (!supabase) return [...demoLeads.values()];
+  if (!supabase) {
+    if (!isDemoMode) throw new HttpError("service_unavailable", "Base de datos no disponible", 503);
+    return [...demoLeads.values()].filter((lead) => role === "admin" || lead.clientId === userId);
+  }
 
-  const { data, error } = await supabase
-    .from("leads")
-    .select("*")
-    .order("created_at", { ascending: false });
+  let query = supabase.from("leads").select("*").order("created_at", { ascending: false });
+
+  // Los clientes solo ven sus propios leads; admin ve todos
+  if (role === "cliente") {
+    query = query.eq("client_id", userId);
+  } else if (role === "proveedor") {
+    // Los proveedores ven leads dirigidos a ellos (se filtra vía RLS también)
+    query = query;
+  }
+
+  const { data, error } = await query;
   if (error) {
     throw new HttpError("db_error", "No se pudieron listar las solicitudes", 502, error.message);
   }
@@ -22,12 +32,13 @@ export async function listLeads(): Promise<Lead[]> {
   return rows.map((row) => mapLeadRow(row));
 }
 
-export async function createLead(input: LeadCreateInput, clientId?: string): Promise<Lead> {
+export async function createLead(input: LeadCreateInput, clientId: string): Promise<Lead> {
   const supabase = getServiceClient();
   if (!supabase) {
+    if (!isDemoMode) throw new HttpError("service_unavailable", "Base de datos no disponible", 503);
     const lead: Lead = {
       id: randomUUID(),
-      clientId: clientId ?? DEMO_CLIENT_ID,
+      clientId,
       providerId: input.providerId,
       serviceId: input.serviceId ?? null,
       description: input.description,
@@ -41,7 +52,7 @@ export async function createLead(input: LeadCreateInput, clientId?: string): Pro
   const { data, error } = await supabase
     .from("leads")
     .insert({
-      client_id: clientId ?? null,
+      client_id: clientId,
       provider_id: input.providerId,
       service_id: input.serviceId ?? null,
       description: input.description,
@@ -57,11 +68,20 @@ export async function createLead(input: LeadCreateInput, clientId?: string): Pro
   return mapLeadRow(data);
 }
 
-export async function updateLead(id: string, input: LeadUpdateInput): Promise<Lead> {
+export async function updateLead(
+  id: string,
+  input: LeadUpdateInput,
+  userId: string,
+  role: UserRole,
+): Promise<Lead> {
   const supabase = getServiceClient();
   if (!supabase) {
+    if (!isDemoMode) throw new HttpError("service_unavailable", "Base de datos no disponible", 503);
     const existing = demoLeads.get(id);
     if (!existing) throw new HttpError("not_found", "Solicitud no encontrada", 404);
+    if (role !== "admin" && existing.clientId !== userId) {
+      throw new HttpError("forbidden", "No puedes modificar esta solicitud", 403);
+    }
     const updated: Lead = { ...existing, status: input.status };
     demoLeads.set(id, updated);
     return updated;

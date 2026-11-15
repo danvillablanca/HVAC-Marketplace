@@ -4,7 +4,7 @@ test.describe("Landing /", () => {
   test("carga con titulo y hero con CTA principal y secundario", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page).toHaveTitle(/Marketplace HVAC/);
+    await expect(page).toHaveTitle(/HVAC Connect/);
 
     await expect(
       page.getByRole("heading", { level: 1, name: /Encuentra y contrata proveedores HVAC/ }),

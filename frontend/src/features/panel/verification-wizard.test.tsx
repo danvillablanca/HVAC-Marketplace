@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { UserEvent } from "@testing-library/user-event";
 import { renderWithProviders, screen, waitFor, userEvent } from "@/test/render";
 import { VerificationWizard } from "./verification-wizard";
@@ -17,8 +17,20 @@ async function fillCompanyStep(user: UserEvent) {
   await user.type(screen.getByLabelText("Correo de contacto"), "contacto@climaandes.cl");
 }
 
+const hooks = vi.hoisted(() => ({
+  profile: undefined as unknown,
+  mutateAsync: vi.fn(),
+}));
+
+vi.mock("./provider-hooks", () => ({
+  useMyProviderProfile: () => ({ data: hooks.profile }),
+  useRequestVerification: () => ({ mutateAsync: hooks.mutateAsync, isPending: false, error: null }),
+}));
+
 beforeEach(() => {
   window.localStorage.clear();
+  hooks.profile = undefined;
+  hooks.mutateAsync.mockReset().mockResolvedValue({});
 });
 
 describe("VerificationWizard", () => {
@@ -89,5 +101,40 @@ describe("VerificationWizard", () => {
 
     await waitFor(() => expect(screen.getByText(/Paso 1 de 3/)).toBeInTheDocument());
     expect(screen.getByLabelText("Razon social")).toHaveValue("Clima Andes SpA");
+  });
+
+  it("PR-013 envia los documentos declarados al backend", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<VerificationWizard />);
+    await fillCompanyStep(user);
+    await user.click(screen.getByRole("button", { name: /Continuar/ }));
+    for (const label of DOCUMENT_LABELS) await user.click(screen.getByLabelText(label));
+    await user.click(screen.getByRole("button", { name: /Continuar/ }));
+    await user.click(screen.getByRole("button", { name: /Enviar a revision/ }));
+    await waitFor(() =>
+      expect(hooks.mutateAsync).toHaveBeenCalledWith({ documents: DOCUMENT_LABELS }),
+    );
+  });
+
+  it("PR-013 sin perfil pide completarlo primero", () => {
+    hooks.profile = null;
+    renderWithProviders(<VerificationWizard />);
+    expect(screen.getByText("Primero completa tu perfil")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Completar perfil" })).toHaveAttribute(
+      "href",
+      "/panel/proveedor/perfil",
+    );
+  });
+
+  it("PR-015 muestra el estado verificado", () => {
+    hooks.profile = {
+      legalName: "X",
+      rut: "1",
+      phone: "",
+      email: "",
+      verificationStatus: "verificado",
+    };
+    renderWithProviders(<VerificationWizard />);
+    expect(screen.getByText("Empresa verificada")).toBeInTheDocument();
   });
 });

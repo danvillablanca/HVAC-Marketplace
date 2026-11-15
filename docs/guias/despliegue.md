@@ -53,6 +53,38 @@ npx supabase db push
 
 > **Nunca** corras `db push` contra producción sin revisar el diff con `supabase db diff`.
 
+### 1.4 Autenticación (REQ-AUT-03, 05 y 06)
+
+En **Authentication → URL Configuration**:
+
+- **Site URL:** la URL pública del frontend (por ejemplo `https://hvac-connect.vercel.app`).
+- **Redirect URLs:** agrega `https://<frontend>/ingresar` (regreso de Google) y
+  `https://<frontend>/restablecer` (enlace de recuperación de contraseña).
+
+En **Authentication → Sessions**, define *Inactivity timeout* en `168h` (7 días), igual que
+`[auth.sessions]` en `supabase/config.toml`. En el plan gratuito esta opción puede no estar
+disponible; en ese caso el frontend igual cierra la sesión tras 7 días sin actividad.
+
+#### Login con Google (opcional)
+
+Si no hay credenciales de Google, deja `VITE_GOOGLE_AUTH_ENABLED=false`: el botón
+"Continuar con Google" no se muestra y el resto del login funciona igual.
+
+1. En [Google Cloud Console](https://console.cloud.google.com/) → *APIs y servicios →
+   Credenciales*, crea un **ID de cliente OAuth** de tipo *Aplicación web*.
+2. En *URIs de redireccionamiento autorizados* agrega
+   `https://<project-ref>.supabase.co/auth/v1/callback` (y
+   `http://127.0.0.1:54321/auth/v1/callback` para desarrollo local).
+3. En Supabase → **Authentication → Providers → Google**, activa el proveedor y pega el
+   *Client ID* y el *Client secret*.
+4. En el frontend (Vercel) define `VITE_GOOGLE_AUTH_ENABLED=true` y vuelve a desplegar.
+5. **Local:** crea `supabase/.env` con `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` y
+   `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET`, cambia `enabled = true` en
+   `[auth.external.google]` de `supabase/config.toml` y reinicia con `pnpm db:stop && pnpm db:start`.
+
+En el primer ingreso con Google el usuario elige si es cliente o proveedor (`/elegir-rol`); la
+elección se guarda una sola vez con la RPC `choose_role` y nunca permite el rol admin (RN-01).
+
 ## 2. Desplegar el backend (Vercel)
 
 1. Vercel → **Add New → Project** → importa el repositorio de GitHub.

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, renderWithProviders, screen, waitFor, userEvent } from "@/test/render";
-import { AuthProvider, useAuth } from "./auth-context";
+import { AuthProvider, INACTIVITY_LIMIT_MS, useAuth } from "./auth-context";
 
 const SESSION_KEY = "hvac-auth-session";
 
@@ -84,7 +84,7 @@ describe("AuthProvider (modo demo)", () => {
     await user.click(screen.getByRole("button", { name: "fallar" }));
 
     await waitFor(() =>
-      expect(screen.getByRole("alert")).toHaveTextContent(/Correo o contrasena incorrectos/),
+      expect(screen.getByRole("alert")).toHaveTextContent(/Correo o contraseña incorrectos/),
     );
     expect(screen.getByTestId("email")).toHaveTextContent("anon");
     expect(window.localStorage.getItem(SESSION_KEY)).toBeNull();
@@ -119,6 +119,55 @@ describe("AuthProvider (modo demo)", () => {
 
     expect(screen.getByTestId("email")).toHaveTextContent("proveedor@demo.cl");
     expect(screen.getByTestId("role")).toHaveTextContent("proveedor");
+  });
+});
+
+describe("AuthProvider (Bloque B)", () => {
+  const persisted = {
+    id: "u-1",
+    email: "proveedor@demo.cl",
+    fullName: "Proveedor Persistido",
+    role: "proveedor",
+  };
+
+  it("PR-005 expira la sesion tras 7 dias sin actividad", () => {
+    window.localStorage.setItem(SESSION_KEY, JSON.stringify(persisted));
+    window.localStorage.setItem(
+      "hvac-last-activity",
+      JSON.stringify(Date.now() - INACTIVITY_LIMIT_MS - 60_000),
+    );
+
+    renderWithProviders(<Probe />);
+
+    expect(screen.getByTestId("email")).toHaveTextContent("anon");
+    expect(window.localStorage.getItem(SESSION_KEY)).toBeNull();
+  });
+
+  it("PR-005 mantiene la sesion con actividad reciente", () => {
+    window.localStorage.setItem(SESSION_KEY, JSON.stringify(persisted));
+    window.localStorage.setItem("hvac-last-activity", JSON.stringify(Date.now() - 60_000));
+
+    renderWithProviders(<Probe />);
+
+    expect(screen.getByTestId("email")).toHaveTextContent("proveedor@demo.cl");
+  });
+
+  it("PR-002 bloquea tras 5 intentos fallidos aunque luego la clave sea correcta", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<Probe />);
+
+    for (let i = 0; i < 5; i++) {
+      await user.click(screen.getByRole("button", { name: "fallar" }));
+      await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(/incorrectos/));
+    }
+    await user.click(screen.getByRole("button", { name: "fallar" }));
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent(/Demasiados intentos fallidos/),
+    );
+
+    await user.click(screen.getByRole("button", { name: "ingresar" }));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.getByTestId("email")).toHaveTextContent("anon");
   });
 });
 

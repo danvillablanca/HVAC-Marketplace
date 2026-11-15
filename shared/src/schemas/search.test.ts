@@ -23,13 +23,15 @@ describe("schemas/search", () => {
       }
     });
 
-    it("aplica defaults de radiusKm, limit y offset", () => {
+    it("PR-017/PR-018 aplica defaults: radio 10 km, pagina de 10, orden por distancia", () => {
       const result = nearbySearchSchema.safeParse({ lat: -33.4489, lng: -70.6693 });
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.radiusKm).toBe(15);
-        expect(result.data.limit).toBe(20);
+        expect(result.data.radiusKm).toBe(10);
+        expect(result.data.limit).toBe(10);
         expect(result.data.offset).toBe(0);
+        expect(result.data.sort).toBe("distance");
+        expect(result.data.onlyAvailable).toBe(false);
       }
     });
 

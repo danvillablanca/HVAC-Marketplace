@@ -9,8 +9,8 @@ export default function HomePage() {
         lineHeight: 1.6,
       }}
     >
-      <h1>Marketplace HVAC API</h1>
-      <p>Backend Next.js (solo API) del Marketplace HVAC.</p>
+      <h1>HVAC Connect API</h1>
+      <p>Backend Next.js (solo API) del HVAC Connect.</p>
       <h2>Endpoints disponibles</h2>
       <ul>
         <li>
@@ -48,6 +48,24 @@ export default function HomePage() {
         </li>
         <li>
           <code>POST /api/ai/chat</code>
+        </li>
+        <li>
+          <code>GET|POST /api/requests</code>
+        </li>
+        <li>
+          <code>GET|PATCH /api/requests/:id</code>
+        </li>
+        <li>
+          <code>POST /api/quotes</code>
+        </li>
+        <li>
+          <code>PATCH /api/quotes/:id</code>
+        </li>
+        <li>
+          <code>GET|PATCH /api/notifications</code>
+        </li>
+        <li>
+          <code>PATCH /api/notifications/:id</code>
         </li>
       </ul>
     </main>

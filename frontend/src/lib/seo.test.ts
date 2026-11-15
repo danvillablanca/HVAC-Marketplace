@@ -38,13 +38,13 @@ describe("lib/seo", () => {
 
     it("agrega el nombre del sitio al título", () => {
       setDocumentTitle("Proveedores");
-      expect(document.title).toBe("Proveedores | Marketplace HVAC");
+      expect(document.title).toBe("Proveedores | HVAC Connect");
     });
 
     it("usa solo el nombre del sitio con título vacío", () => {
       document.title = "algo";
       setDocumentTitle("");
-      expect(document.title).toBe("Marketplace HVAC");
+      expect(document.title).toBe("HVAC Connect");
     });
   });
 
@@ -61,23 +61,23 @@ describe("lib/seo", () => {
 
     it("sincroniza el título al montar", () => {
       renderHook(() => useDocumentTitle("Tabs"));
-      expect(document.title).toBe("Tabs | Marketplace HVAC");
+      expect(document.title).toBe("Tabs | HVAC Connect");
     });
 
     it("actualiza el título cuando cambia", () => {
       const { rerender } = renderHook(({ title }) => useDocumentTitle(title), {
         initialProps: { title: "Uno" },
       });
-      expect(document.title).toBe("Uno | Marketplace HVAC");
+      expect(document.title).toBe("Uno | HVAC Connect");
 
       act(() => rerender({ title: "Dos" }));
-      expect(document.title).toBe("Dos | Marketplace HVAC");
+      expect(document.title).toBe("Dos | HVAC Connect");
     });
 
     it("restaura el título previo al desmontar", () => {
       document.title = "Anterior";
       const { unmount } = renderHook(() => useDocumentTitle("Detalle"));
-      expect(document.title).toBe("Detalle | Marketplace HVAC");
+      expect(document.title).toBe("Detalle | HVAC Connect");
 
       unmount();
       expect(document.title).toBe("Anterior");

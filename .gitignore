@@ -46,3 +46,6 @@ supabase/.env
 .turbo/
 .cache/
 .eslintcache
+
+# Claude Code local
+.claude/

@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { env, hasSupabaseConfig, mapStyleUrl } from "./env";
+import { env, hasSupabaseConfig, mapStyle } from "./env";
 
 const originalMapTilerKey = env.mapTilerKey;
 
@@ -28,15 +28,20 @@ describe("lib/env", () => {
     });
   });
 
-  describe("mapStyleUrl", () => {
-    it("usa OpenFreeMap cuando no hay key de MapTiler", () => {
+  describe("mapStyle", () => {
+    it("PR-019 usa teselas raster de OpenStreetMap cuando no hay key de MapTiler", () => {
       env.mapTilerKey = "";
-      expect(mapStyleUrl()).toBe("https://tiles.openfreemap.org/styles/positron");
+      const style = mapStyle();
+      expect(typeof style).toBe("object");
+      const source = (style as { sources: Record<string, { type: string; tiles: string[] }> })
+        .sources.osm;
+      expect(source.type).toBe("raster");
+      expect(source.tiles[0]).toContain("tile.openstreetmap.org");
     });
 
     it("usa MapTiler streets-v2 cuando hay key", () => {
       env.mapTilerKey = "abc123";
-      const url = mapStyleUrl();
+      const url = mapStyle();
       expect(url).toContain("api.maptiler.com/maps/streets-v2/style.json");
       expect(url).toContain("key=abc123");
     });

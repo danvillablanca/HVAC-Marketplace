@@ -11,6 +11,9 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.{test,spec}.ts"],
+    env: {
+      DEMO_MODE: "true",
+    },
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],

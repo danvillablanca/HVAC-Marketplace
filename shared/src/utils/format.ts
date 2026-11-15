@@ -31,7 +31,10 @@ export function formatDistance(meters: number | null | undefined): string {
   return `${(meters / 1000).toFixed(1)} km`;
 }
 
-/** Formatea una fecha ISO a dd-mm-aaaa (hora local). */
+/** Zona horaria oficial del producto (RNF-11), independiente de la del navegador. */
+export const APP_TIME_ZONE = "America/Santiago";
+
+/** Formatea una fecha ISO a dd-mm-aaaa en hora de Chile (RNF-11). */
 export function formatDate(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "—";
@@ -39,5 +42,21 @@ export function formatDate(iso: string): string {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    timeZone: APP_TIME_ZONE,
+  }).format(date);
+}
+
+/** Formatea una fecha ISO a dd-mm-aaaa hh:mm en hora de Chile (RNF-11). */
+export function formatDateTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("es-CL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: APP_TIME_ZONE,
   }).format(date);
 }

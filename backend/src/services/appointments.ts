@@ -1,14 +1,19 @@
 import { randomUUID } from "node:crypto";
 import type { Appointment, AppointmentCreateInput, AppointmentUpdateInput } from "@hvac/shared";
 import { getServiceClient } from "../lib/supabase";
+import { isDemoMode } from "../lib/env";
 import { HttpError } from "../lib/http";
 import { mapAppointmentRow } from "./mappers";
 
 const demoAppointments = new Map<string, Appointment>();
 
-export async function createAppointment(input: AppointmentCreateInput): Promise<Appointment> {
+export async function createAppointment(
+  input: AppointmentCreateInput,
+  _userId: string,
+): Promise<Appointment> {
   const supabase = getServiceClient();
   if (!supabase) {
+    if (!isDemoMode) throw new HttpError("service_unavailable", "Base de datos no disponible", 503);
     const appointment: Appointment = {
       id: randomUUID(),
       leadId: input.leadId,
@@ -38,9 +43,11 @@ export async function createAppointment(input: AppointmentCreateInput): Promise<
 export async function updateAppointment(
   id: string,
   input: AppointmentUpdateInput,
+  _userId: string,
 ): Promise<Appointment> {
   const supabase = getServiceClient();
   if (!supabase) {
+    if (!isDemoMode) throw new HttpError("service_unavailable", "Base de datos no disponible", 503);
     const existing = demoAppointments.get(id);
     if (!existing) throw new HttpError("not_found", "Cita no encontrada", 404);
     const updated: Appointment = { ...existing, status: input.status };

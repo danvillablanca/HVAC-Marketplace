@@ -20,6 +20,8 @@ function searchInput(overrides: Partial<NearbySearchInput> = {}): NearbySearchIn
     radiusKm: 50,
     limit: 20,
     offset: 0,
+    sort: "distance",
+    onlyAvailable: false,
     ...overrides,
   };
 }
@@ -112,16 +114,16 @@ describe("searchDemoProviders", () => {
   it("incluye proveedores dentro del radio y excluye los de fuera", () => {
     const nearConcepcion = searchDemoProviders(
       searchInput({ lat: CONCEPCION.lat, lng: CONCEPCION.lng, radiusKm: 10 }),
-    );
+    ).items;
     expect(nearConcepcion.map((provider) => provider.id)).toContain("p-aire-bio");
     expect(nearConcepcion.map((provider) => provider.id)).not.toContain("p-clima-andes");
 
-    const nearSantiago = searchDemoProviders(searchInput({ radiusKm: 50 }));
+    const nearSantiago = searchDemoProviders(searchInput({ radiusKm: 50 })).items;
     expect(nearSantiago.map((provider) => provider.id)).not.toContain("p-aire-bio");
   });
 
   it("filtra por segment", () => {
-    const results = searchDemoProviders(searchInput({ segment: "industrial" }));
+    const results = searchDemoProviders(searchInput({ segment: "industrial" })).items;
     expect(results.length).toBeGreaterThan(0);
     expect(results.every((provider) => provider.segment === "industrial")).toBe(true);
     const ids = results.map((provider) => provider.id);
@@ -130,12 +132,12 @@ describe("searchDemoProviders", () => {
   });
 
   it("filtra por query", () => {
-    const results = searchDemoProviders(searchInput({ query: "split" }));
+    const results = searchDemoProviders(searchInput({ query: "split" })).items;
     expect(results.map((provider) => provider.id)).toEqual(["p-hogar-fresco"]);
   });
 
   it("ordena por distancia ascendente", () => {
-    const results = searchDemoProviders(searchInput({ radiusKm: 50 }));
+    const results = searchDemoProviders(searchInput({ radiusKm: 50 })).items;
     expect(results[0]?.id).toBe("p-clima-andes");
     const distances = results.map((provider) => provider.distanceMeters ?? 0);
     const sorted = [...distances].sort((a, b) => a - b);
@@ -143,8 +145,8 @@ describe("searchDemoProviders", () => {
   });
 
   it("pagina con limit y offset", () => {
-    const first = searchDemoProviders(searchInput({ radiusKm: 50, limit: 2, offset: 0 }));
-    const second = searchDemoProviders(searchInput({ radiusKm: 50, limit: 2, offset: 2 }));
+    const first = searchDemoProviders(searchInput({ radiusKm: 50, limit: 2, offset: 0 })).items;
+    const second = searchDemoProviders(searchInput({ radiusKm: 50, limit: 2, offset: 2 })).items;
 
     expect(first).toHaveLength(2);
     expect(second).toHaveLength(2);

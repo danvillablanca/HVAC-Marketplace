@@ -27,6 +27,11 @@ export function RequireRole({ roles, children }: RequireRoleProps) {
     );
   }
 
+  // REQ-AUT-06: un usuario OAuth nuevo debe elegir su rol antes de entrar al panel.
+  if (user?.needsRole) {
+    return <Navigate to="/elegir-rol" replace state={{ from: location.pathname }} />;
+  }
+
   if (!user || !role || !roles.includes(role)) {
     return <Navigate to="/ingresar" replace state={{ from: location.pathname }} />;
   }

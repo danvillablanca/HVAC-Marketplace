@@ -1,0 +1,98 @@
+/** Comunas con centroide aproximado (mismo contenido que la migracion 0006). */
+export interface CommuneDef {
+  region: string;
+  name: string;
+  lat: number;
+  lng: number;
+}
+
+export const COMMUNES: CommuneDef[] = [
+  { region: "Metropolitana de Santiago", name: "Santiago", lat: -33.4378, lng: -70.6505 },
+  { region: "Metropolitana de Santiago", name: "Cerrillos", lat: -33.495, lng: -70.716 },
+  { region: "Metropolitana de Santiago", name: "Cerro Navia", lat: -33.425, lng: -70.735 },
+  { region: "Metropolitana de Santiago", name: "Conchalí", lat: -33.383, lng: -70.675 },
+  { region: "Metropolitana de Santiago", name: "El Bosque", lat: -33.562, lng: -70.676 },
+  { region: "Metropolitana de Santiago", name: "Estación Central", lat: -33.459, lng: -70.698 },
+  { region: "Metropolitana de Santiago", name: "Huechuraba", lat: -33.367, lng: -70.634 },
+  { region: "Metropolitana de Santiago", name: "Independencia", lat: -33.416, lng: -70.665 },
+  { region: "Metropolitana de Santiago", name: "La Cisterna", lat: -33.53, lng: -70.664 },
+  { region: "Metropolitana de Santiago", name: "La Florida", lat: -33.522, lng: -70.598 },
+  { region: "Metropolitana de Santiago", name: "La Granja", lat: -33.539, lng: -70.625 },
+  { region: "Metropolitana de Santiago", name: "La Pintana", lat: -33.584, lng: -70.634 },
+  { region: "Metropolitana de Santiago", name: "La Reina", lat: -33.445, lng: -70.535 },
+  { region: "Metropolitana de Santiago", name: "Las Condes", lat: -33.408, lng: -70.567 },
+  { region: "Metropolitana de Santiago", name: "Lo Barnechea", lat: -33.35, lng: -70.518 },
+  { region: "Metropolitana de Santiago", name: "Lo Espejo", lat: -33.521, lng: -70.688 },
+  { region: "Metropolitana de Santiago", name: "Lo Prado", lat: -33.444, lng: -70.725 },
+  { region: "Metropolitana de Santiago", name: "Macul", lat: -33.492, lng: -70.599 },
+  { region: "Metropolitana de Santiago", name: "Maipú", lat: -33.51, lng: -70.757 },
+  { region: "Metropolitana de Santiago", name: "Ñuñoa", lat: -33.456, lng: -70.598 },
+  { region: "Metropolitana de Santiago", name: "Pedro Aguirre Cerda", lat: -33.492, lng: -70.673 },
+  { region: "Metropolitana de Santiago", name: "Peñalolén", lat: -33.485, lng: -70.54 },
+  { region: "Metropolitana de Santiago", name: "Providencia", lat: -33.426, lng: -70.617 },
+  { region: "Metropolitana de Santiago", name: "Pudahuel", lat: -33.44, lng: -70.76 },
+  { region: "Metropolitana de Santiago", name: "Quilicura", lat: -33.36, lng: -70.728 },
+  { region: "Metropolitana de Santiago", name: "Quinta Normal", lat: -33.428, lng: -70.699 },
+  { region: "Metropolitana de Santiago", name: "Recoleta", lat: -33.407, lng: -70.64 },
+  { region: "Metropolitana de Santiago", name: "Renca", lat: -33.406, lng: -70.727 },
+  { region: "Metropolitana de Santiago", name: "San Joaquín", lat: -33.496, lng: -70.628 },
+  { region: "Metropolitana de Santiago", name: "San Miguel", lat: -33.497, lng: -70.651 },
+  { region: "Metropolitana de Santiago", name: "San Ramón", lat: -33.536, lng: -70.642 },
+  { region: "Metropolitana de Santiago", name: "Vitacura", lat: -33.39, lng: -70.572 },
+  { region: "Metropolitana de Santiago", name: "Puente Alto", lat: -33.611, lng: -70.575 },
+  { region: "Metropolitana de Santiago", name: "Pirque", lat: -33.674, lng: -70.565 },
+  { region: "Metropolitana de Santiago", name: "San José de Maipo", lat: -33.642, lng: -70.353 },
+  { region: "Metropolitana de Santiago", name: "Colina", lat: -33.201, lng: -70.67 },
+  { region: "Metropolitana de Santiago", name: "Lampa", lat: -33.286, lng: -70.877 },
+  { region: "Metropolitana de Santiago", name: "Tiltil", lat: -33.083, lng: -70.928 },
+  { region: "Metropolitana de Santiago", name: "San Bernardo", lat: -33.592, lng: -70.699 },
+  { region: "Metropolitana de Santiago", name: "Buin", lat: -33.732, lng: -70.742 },
+  { region: "Metropolitana de Santiago", name: "Calera de Tango", lat: -33.63, lng: -70.77 },
+  { region: "Metropolitana de Santiago", name: "Paine", lat: -33.808, lng: -70.741 },
+  { region: "Metropolitana de Santiago", name: "Melipilla", lat: -33.689, lng: -71.215 },
+  { region: "Metropolitana de Santiago", name: "Alhué", lat: -34.037, lng: -71.097 },
+  { region: "Metropolitana de Santiago", name: "Curacaví", lat: -33.406, lng: -71.133 },
+  { region: "Metropolitana de Santiago", name: "María Pinto", lat: -33.515, lng: -71.117 },
+  { region: "Metropolitana de Santiago", name: "San Pedro", lat: -33.894, lng: -71.461 },
+  { region: "Metropolitana de Santiago", name: "Talagante", lat: -33.665, lng: -70.928 },
+  { region: "Metropolitana de Santiago", name: "El Monte", lat: -33.68, lng: -71.017 },
+  { region: "Metropolitana de Santiago", name: "Isla de Maipo", lat: -33.75, lng: -70.9 },
+  { region: "Metropolitana de Santiago", name: "Padre Hurtado", lat: -33.572, lng: -70.815 },
+  { region: "Metropolitana de Santiago", name: "Peñaflor", lat: -33.606, lng: -70.876 },
+  { region: "Arica y Parinacota", name: "Arica", lat: -18.4783, lng: -70.3126 },
+  { region: "Tarapacá", name: "Iquique", lat: -20.2307, lng: -70.1357 },
+  { region: "Antofagasta", name: "Antofagasta", lat: -23.6509, lng: -70.3975 },
+  { region: "Atacama", name: "Copiapó", lat: -27.3668, lng: -70.3323 },
+  { region: "Coquimbo", name: "La Serena", lat: -29.9027, lng: -71.2519 },
+  { region: "Valparaíso", name: "Valparaíso", lat: -33.0472, lng: -71.6127 },
+  { region: "Valparaíso", name: "Viña del Mar", lat: -33.0245, lng: -71.5518 },
+  {
+    region: "Libertador General Bernardo O'Higgins",
+    name: "Rancagua",
+    lat: -34.1708,
+    lng: -70.7444,
+  },
+  { region: "Maule", name: "Talca", lat: -35.4264, lng: -71.6554 },
+  { region: "Ñuble", name: "Chillán", lat: -36.6066, lng: -72.1034 },
+  { region: "Biobío", name: "Concepción", lat: -36.827, lng: -73.0503 },
+  { region: "La Araucanía", name: "Temuco", lat: -38.7359, lng: -72.5904 },
+  { region: "Los Ríos", name: "Valdivia", lat: -39.8142, lng: -73.2459 },
+  { region: "Los Lagos", name: "Puerto Montt", lat: -41.4693, lng: -72.9424 },
+  {
+    region: "Aysén del General Carlos Ibáñez del Campo",
+    name: "Coyhaique",
+    lat: -45.5712,
+    lng: -72.0685,
+  },
+  {
+    region: "Magallanes y de la Antártica Chilena",
+    name: "Punta Arenas",
+    lat: -53.1638,
+    lng: -70.9171,
+  },
+];
+
+export function findCommune(name: string): CommuneDef | undefined {
+  const key = name.trim().toLowerCase();
+  return COMMUNES.find((c) => c.name.toLowerCase() === key);
+}

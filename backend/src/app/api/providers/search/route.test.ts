@@ -11,9 +11,9 @@ describe("GET /api/providers/search", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.ok).toBe(true);
-    expect(Array.isArray(body.data)).toBe(true);
-    expect(body.data.length).toBeGreaterThan(0);
-    for (const provider of body.data) {
+    expect(Array.isArray(body.data.items)).toBe(true);
+    expect(body.data.items.length).toBeGreaterThan(0);
+    for (const provider of body.data.items) {
       expect(provider.location).toMatchObject({
         lat: expect.any(Number),
         lng: expect.any(Number),
@@ -24,7 +24,7 @@ describe("GET /api/providers/search", () => {
   it("ordena los resultados por distancia ascendente", async () => {
     const res = await GET(jsonRequest("GET", VALID_QUERY));
     const body = await res.json();
-    const distances = body.data.map(
+    const distances = body.data.items.map(
       (provider: { distanceMeters: number }) => provider.distanceMeters,
     );
 
@@ -35,8 +35,8 @@ describe("GET /api/providers/search", () => {
     const res = await GET(jsonRequest("GET", `${VALID_QUERY}&segment=residencial`));
     const body = await res.json();
 
-    expect(body.data.length).toBeGreaterThan(0);
-    for (const provider of body.data) {
+    expect(body.data.items.length).toBeGreaterThan(0);
+    for (const provider of body.data.items) {
       expect(provider.segment).toBe("residencial");
     }
   });

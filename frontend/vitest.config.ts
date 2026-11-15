@@ -12,8 +12,13 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    // Formularios largos con userEvent superan 5 s en equipos cargados.
+    testTimeout: 15_000,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    env: {
+      VITE_DEMO_MODE: "true",
+    },
     css: false,
     coverage: {
       provider: "v8",
