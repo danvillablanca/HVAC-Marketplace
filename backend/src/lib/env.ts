@@ -13,7 +13,7 @@ export const env = {
   smtpPass: real(process.env.SMTP_PASS),
   resendApiKey: real(process.env.RESEND_API_KEY),
   emailFrom: process.env.EMAIL_FROM ?? "HVAC Connect <onboarding@resend.dev>",
-  geminiChatModel: process.env.GEMINI_CHAT_MODEL ?? "gemini-2.5-flash",
+  geminiChatModel: process.env.GEMINI_CHAT_MODEL ?? "gemini-3.5-flash-lite",
   geminiEmbeddingModel: process.env.GEMINI_EMBEDDING_MODEL ?? "gemini-embedding-001",
   geminiEmbeddingDim: Number(process.env.GEMINI_EMBEDDING_DIM ?? 1536),
   frontendOrigin: process.env.FRONTEND_ORIGIN ?? "http://localhost:5173",

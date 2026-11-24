@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { Bot, Info, MapPin, Search, Send, Sparkles, User } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { Bot, Info, LogIn, MapPin, Search, Send, Sparkles, User } from "lucide-react";
+import { ApiRequestError, apiFetch } from "@/lib/api";
+import { useAuth } from "@/features/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -27,11 +28,21 @@ interface ChatReply {
 const GREETING =
   "Hola, soy el asistente HVAC. Puedo orientarte sobre servicios, proveedores y regiones de Chile. ¿Que necesitas?";
 
-const FALLBACK_REPLY =
-  "El asistente IA estara disponible en E2/E3. Por ahora puedes explorar el mapa de proveedores en /mapa o buscar proveedores verificados en /buscar.";
+const LOGIN_REPLY = "Inicia sesión para usar el asistente.";
+
+const ERROR_REPLY =
+  "No pude responder en este momento. Intenta de nuevo en unos minutos o busca proveedores verificados en /buscar.";
 
 const DISCLAIMER =
-  "Asistente en modo demostracion. Las respuestas son orientativas y no constituyen asesoria tecnica.";
+  "Respuestas generadas con IA (Gemini): son orientativas y no reemplazan la visita de un técnico.";
+
+function errorReply(error: unknown): string {
+  if (error instanceof ApiRequestError) {
+    if (error.status === 401) return LOGIN_REPLY;
+    if (error.status === 429) return error.message;
+  }
+  return ERROR_REPLY;
+}
 
 let messageCounter = 0;
 function nextId(): string {
@@ -43,6 +54,8 @@ export function ChatStub({ suggestions = [], className }: ChatStubProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { id: nextId(), role: "assistant", content: GREETING },
   ]);
+  const { user, loading } = useAuth();
+  const needsLogin = !loading && !user;
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -53,7 +66,7 @@ export function ChatStub({ suggestions = [], className }: ChatStubProps) {
 
   async function send(text: string) {
     const content = text.trim();
-    if (!content || sending) return;
+    if (!content || sending || needsLogin) return;
 
     setMessages((current) => [...current, { id: nextId(), role: "user", content }]);
     setInput("");
@@ -64,12 +77,12 @@ export function ChatStub({ suggestions = [], className }: ChatStubProps) {
         method: "POST",
         body: { message: content },
       });
-      const reply = data?.reply ?? data?.message ?? data?.answer ?? FALLBACK_REPLY;
+      const reply = data?.reply ?? data?.message ?? data?.answer ?? ERROR_REPLY;
       setMessages((current) => [...current, { id: nextId(), role: "assistant", content: reply }]);
-    } catch {
+    } catch (error) {
       setMessages((current) => [
         ...current,
-        { id: nextId(), role: "assistant", content: FALLBACK_REPLY },
+        { id: nextId(), role: "assistant", content: errorReply(error) },
       ]);
     } finally {
       setSending(false);
@@ -143,13 +156,27 @@ export function ChatStub({ suggestions = [], className }: ChatStubProps) {
               key={suggestion}
               type="button"
               onClick={() => void send(suggestion)}
-              disabled={sending}
+              disabled={sending || needsLogin}
               className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
             >
               <Sparkles className="size-3" />
               {suggestion}
             </button>
           ))}
+        </div>
+      )}
+
+      {needsLogin && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-secondary/50 px-4 py-3 text-sm"
+        >
+          <span>{LOGIN_REPLY} Es gratis y te permite hacer hasta 20 consultas al día.</span>
+          <Button asChild size="sm">
+            <Link to="/ingresar" state={{ from: "/chat" }}>
+              <LogIn className="size-4" /> Ingresar
+            </Link>
+          </Button>
         </div>
       )}
 
@@ -162,13 +189,13 @@ export function ChatStub({ suggestions = [], className }: ChatStubProps) {
           value={input}
           onChange={(event) => setInput(event.target.value)}
           placeholder="Pregunta por servicios, regiones o proveedores..."
-          disabled={sending}
+          disabled={sending || needsLogin}
         />
         <Button
           type="submit"
           size="icon"
           aria-label="Enviar mensaje"
-          disabled={sending || !input.trim()}
+          disabled={sending || needsLogin || !input.trim()}
         >
           <Send className="size-4" />
         </Button>
