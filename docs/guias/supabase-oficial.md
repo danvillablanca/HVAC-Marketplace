@@ -33,12 +33,13 @@ npx supabase db push                                 # aplica supabase/migration
 ## 2. Configurar Auth en el Dashboard
 
 *Authentication → URL Configuration*:
-- **Site URL:** `http://localhost:5173` (o la URL del frontend desplegado).
-- **Redirect URLs:** `http://localhost:5173/ingresar` y `http://localhost:5173/restablecer`.
+- **Site URL:** `https://hvac-connect.vercel.app`.
+- **Redirect URLs:** `/ingresar` y `/restablecer` de `https://hvac-connect.vercel.app` y de `http://localhost:5173`.
 
-*Authentication → Sign In / Providers → Email*: **Confirm email** viene activado en la nube. La app
-lo soporta: al registrarse muestra "Revisa tu correo" y, si alguien intenta ingresar sin confirmar,
-se lo indica. Para pruebas rápidas puedes desactivarlo.
+*Authentication → Sign In / Providers → Email*: **Confirm email** está activado. La app lo soporta:
+al registrarse muestra "Revisa tu correo" y, si alguien intenta ingresar sin confirmar, se lo indica.
+Los correos salen por SMTP de Gmail (`hvacmarkett@gmail.com`); el correo por defecto de Supabase solo
+llega a miembros del equipo. Configuración en [`despliegue.md` §1.5](despliegue.md).
 
 Plantillas en español (opcional): copia `supabase/templates/recovery.html` y `confirmation.html`
 en *Authentication → Emails*, o ejecuta `npx supabase config push` (sube también `site_url` y el

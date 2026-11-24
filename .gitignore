@@ -49,3 +49,4 @@ supabase/.env
 
 # Claude Code local
 .claude/
+.env.cloud

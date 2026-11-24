@@ -3,6 +3,10 @@
 Estrategia de despliegue del MVP: **frontend y backend como dos proyectos separados en Vercel**,
 con **Supabase Cloud** como base de datos y autenticación.
 
+> **Producción actual (24/11/2026):** frontend <https://hvac-connect.vercel.app> (proyecto
+> `hvac-connect`) y backend <https://hvac-connect-api.vercel.app> (proyecto `hvac-connect-api`),
+> Supabase `paklzafoipzghfyftnfw`. Correos por SMTP de Gmail (sección 1.5).
+
 ```
 ┌──────────────────┐     HTTPS/JSON     ┌──────────────────┐
 │  Frontend (SPA)  │ ─────────────────▶ │  Backend (API)   │
@@ -38,6 +42,10 @@ En **Project Settings → API**:
 
 ### 1.3 Aplicar migraciones
 
+> La conexión directa `db.<ref>.supabase.co` es solo IPv6. Desde redes IPv4 usa el *Session pooler*:
+> `SUPABASE_DB_URL=postgresql://postgres.<ref>:<password>@aws-0-us-east-1.pooler.supabase.com:5432/postgres`
+> y `npx supabase db push --db-url "$SUPABASE_DB_URL"`. **No** corras el seed en producción.
+
 Vincula el CLI local al proyecto remoto y sube el esquema:
 
 ```bash
@@ -64,6 +72,22 @@ En **Authentication → URL Configuration**:
 En **Authentication → Sessions**, define *Inactivity timeout* en `168h` (7 días), igual que
 `[auth.sessions]` en `supabase/config.toml`. En el plan gratuito esta opción puede no estar
 disponible; en ese caso el frontend igual cierra la sesión tras 7 días sin actividad.
+
+### 1.5 Correo (REQ-NOT-02 y REQ-AUT-03)
+
+El correo gratuito de Supabase solo llega a miembros del equipo, así que producción usa **Gmail
+SMTP** con `hvacmarkett@gmail.com` (gratis, ~500 correos/día):
+
+1. En la cuenta de Google: activar *Verificación en 2 pasos* y crear una **contraseña de
+   aplicación** en <https://myaccount.google.com/apppasswords>.
+2. Supabase → **Authentication → Emails → SMTP Settings**: host `smtp.gmail.com`, puerto `465`,
+   usuario y remitente `hvacmarkett@gmail.com`, nombre `HVAC Connect`, contraseña de aplicación.
+   Subir *Rate limits → emails* (Supabase lo deja en 2/h) a `100`.
+3. **Authentication → Sign In / Providers → Email → Confirm email**: activado.
+4. Plantillas en español: asuntos y contenido de `supabase/templates/confirmation.html` y
+   `recovery.html` (los mismos de `[auth.email.template.*]` en `config.toml`).
+5. Backend (Vercel): `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` y `EMAIL_FROM`. Con SMTP
+   definido, `sendEmail` lo usa antes que Resend; sin ninguno, solo registra el correo en el log.
 
 #### Login con Google (opcional)
 
@@ -102,6 +126,11 @@ elección se guarda una sola vez con la RPC `choose_role` y nunca permite el rol
 | `FRONTEND_ORIGIN`           | URL del frontend en producción, p. ej. `https://hvac-marketplace.vercel.app`. |
 | `BACKEND_PORT`              | `3001` (referencial; en Vercel el puerto lo gestiona la plataforma).          |
 | `GEMINI_API_KEY`            | Opcional; vacío para usar el stub IA.                                         |
+| `DEMO_MODE`                 | `false` (o vacío).                                                            |
+| `SMTP_HOST` / `SMTP_PORT`   | `smtp.gmail.com` / `465` (sección 1.5).                                       |
+| `SMTP_USER` / `SMTP_PASS`   | Cuenta Gmail y contraseña de aplicación (`SMTP_PASS` como _Sensitive_).       |
+| `EMAIL_FROM`                | `HVAC Connect <hvacmarkett@gmail.com>`.                                       |
+| `RESEND_API_KEY`            | Alternativa a SMTP (requiere dominio verificado en Resend).                   |
 
 7. Deploy y verifica: `https://<backend>.vercel.app/api/health`.
 
@@ -123,6 +152,8 @@ elección se guarda una sola vez con la RPC `choose_role` y nunca permite el rol
 | `VITE_SUPABASE_URL`      | Project URL de Supabase Cloud.                                  |
 | `VITE_SUPABASE_ANON_KEY` | anon key.                                                       |
 | `VITE_MAPTILER_KEY`      | Opcional; clave de MapTiler.                                    |
+| `VITE_DEMO_MODE`         | `false`.                                                        |
+| `VITE_GOOGLE_AUTH_ENABLED` | `false` salvo que Google esté configurado en Supabase.        |
 
 7. Deploy y abre la URL del frontend.
 
@@ -138,6 +169,18 @@ configuración automática no lo hace, agrega `frontend/vercel.json`:
 {
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
+```
+
+### Desplegar con la CLI (cómo está hoy)
+
+Los proyectos de Vercel no están conectados a GitHub (instalar la app de Vercel en el repo
+requiere al dueño). Se despliega desde la raíz del repo, que sube el monorepo completo y Vercel
+construye la carpeta `rootDirectory` de cada proyecto. `.vercelignore` excluye `.env*`.
+
+```bash
+npx vercel login                                   # cuenta hvacmarkett
+VERCEL_ORG_ID=<team> VERCEL_PROJECT_ID=<prj backend>  npx vercel deploy --prod
+VERCEL_ORG_ID=<team> VERCEL_PROJECT_ID=<prj frontend> npx vercel deploy --prod
 ```
 
 ## 4. Dominio
