@@ -27,7 +27,7 @@ describe("env", () => {
     expect(env.supabaseAnonKey).toBe("");
     expect(env.supabaseServiceRoleKey).toBe("");
     expect(env.geminiApiKey).toBe("");
-    expect(env.geminiChatModel).toBe("gemini-2.5-flash");
+    expect(env.geminiChatModel).toBe("gemini-3.5-flash-lite");
     expect(env.geminiEmbeddingModel).toBe("gemini-embedding-001");
     expect(env.geminiEmbeddingDim).toBe(1536);
     expect(env.frontendOrigin).toBe("http://localhost:5173");

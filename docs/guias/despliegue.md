@@ -125,7 +125,8 @@ elección se guarda una sola vez con la RPC `choose_role` y nunca permite el rol
 | `SUPABASE_SERVICE_ROLE_KEY` | service_role key (marcar como _Sensitive_).                                   |
 | `FRONTEND_ORIGIN`           | URL del frontend en producción, p. ej. `https://hvac-marketplace.vercel.app`. |
 | `BACKEND_PORT`              | `3001` (referencial; en Vercel el puerto lo gestiona la plataforma).          |
-| `GEMINI_API_KEY`            | Opcional; vacío para usar el stub IA.                                         |
+| `GEMINI_API_KEY`            | Clave de Google AI Studio (_Sensitive_). Vacía: el asistente responde por reglas. |
+| `GEMINI_CHAT_MODEL`         | `gemini-3.5-flash-lite` (`gemini-2.5-flash` ya no existe para cuentas nuevas). |
 | `DEMO_MODE`                 | `false` (o vacío).                                                            |
 | `SMTP_HOST` / `SMTP_PORT`   | `smtp.gmail.com` / `465` (sección 1.5).                                       |
 | `SMTP_USER` / `SMTP_PASS`   | Cuenta Gmail y contraseña de aplicación (`SMTP_PASS` como _Sensitive_).       |

@@ -12,8 +12,27 @@ function okResponse(data: unknown): Response {
   } as unknown as Response;
 }
 
+const SESSION_KEY = "hvac-auth-session";
+
+function errorResponse(status: number, code: string, message: string): Response {
+  return {
+    ok: false,
+    status,
+    json: async () => ({ ok: false, error: { code, message } }),
+  } as unknown as Response;
+}
+
 beforeEach(() => {
   window.localStorage.clear();
+  window.localStorage.setItem(
+    SESSION_KEY,
+    JSON.stringify({
+      id: "u-cliente",
+      email: "cliente@demo.cl",
+      fullName: "Cliente",
+      role: "cliente",
+    }),
+  );
   fetchMock.mockReset();
   vi.stubGlobal("fetch", fetchMock);
 });
@@ -41,7 +60,35 @@ describe("ChatStub", () => {
     expect(JSON.parse(String((init as RequestInit).body))).toEqual({ message: "Hola" });
   });
 
-  it("usa el fallback local cuando la peticion falla", async () => {
+  it("sin sesion pide iniciar sesion y no envia consultas", async () => {
+    window.localStorage.clear();
+    renderWithProviders(<ChatStub suggestions={["Ver proveedores split"]} />);
+
+    expect(await screen.findByText(/Inicia sesión para usar el asistente/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Ingresar/ })).toHaveAttribute("href", "/ingresar");
+    expect(screen.getByLabelText("Escribe tu consulta")).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Ver proveedores split/ })).toBeDisabled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("PR-038 muestra el mensaje del limite diario cuando el backend responde 429", async () => {
+    fetchMock.mockResolvedValue(
+      errorResponse(
+        429,
+        "rate_limited",
+        "Alcanzaste el límite diario de consultas al asistente (20).",
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<ChatStub />);
+
+    await user.type(screen.getByLabelText("Escribe tu consulta"), "Otra consulta");
+    await user.click(screen.getByRole("button", { name: "Enviar mensaje" }));
+
+    expect(await screen.findByText(/límite diario de consultas/)).toBeInTheDocument();
+  });
+
+  it("muestra un mensaje de error cuando la peticion falla", async () => {
     fetchMock.mockRejectedValue(new Error("network down"));
     const user = userEvent.setup();
     renderWithProviders(<ChatStub />);
@@ -49,9 +96,7 @@ describe("ChatStub", () => {
     await user.type(screen.getByLabelText("Escribe tu consulta"), "Necesito ayuda");
     await user.click(screen.getByRole("button", { name: "Enviar mensaje" }));
 
-    expect(
-      await screen.findByText(/El asistente IA estara disponible en E2\/E3/),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/No pude responder en este momento/)).toBeInTheDocument();
   });
 
   it("acepta variantes de respuesta (message/answer) y sugerencias", async () => {

@@ -289,7 +289,7 @@ flowchart LR
 
 ### 6.5 Módulo IA (`ChatPage` + Gemini) — diferido
 
-- Contrato ya definido (`chatSchema`), endpoint `/api/chat` y modelo `gemini-2.5-flash` / `gemini-embedding-001` configurados por entorno.
+- Contrato ya definido (`chatSchema`), endpoint `/api/chat` y modelo `gemini-3.5-flash-lite` / `gemini-embedding-001` configurados por entorno.
 - Con `GEMINI_API_KEY` vacío se usa un **stub** que responde de forma controlada.
 - La columna `vector(1536)` y pgvector quedan preparadas para RAG sobre manuales técnicos.
 
@@ -313,7 +313,7 @@ flowchart LR
 | Backend  | Zod                | 3.24                                        | Validación declarativa compartida                          |
 | Datos    | Supabase           | Cloud                                       | Auth + Postgres + PostGIS + pgvector + Storage gestionados |
 | Datos    | PostgreSQL/PostGIS | gestionado                                  | Consultas geoespaciales reales (RP3)                       |
-| IA       | Google Gemini      | `gemini-2.5-flash` / `gemini-embedding-001` | Embeddings + generación, capa gratuita (diferido)          |
+| IA       | Google Gemini      | `gemini-3.5-flash-lite` / `gemini-embedding-001` | Embeddings + generación, capa gratuita (diferido)          |
 | Mapas    | MapTiler           | Cloud                                       | Tiles vectoriales, capa gratuita 100k tiles/mes            |
 | Build    | pnpm + Turborepo   | 12.4 / 2.3                                  | Monorepo eficiente, tareas cacheadas                       |
 | CI/CD    | GitHub Actions     | —                                           | Automatización gratuita en repositorio                     |
@@ -341,7 +341,7 @@ SUPABASE_URL=http://127.0.0.1:54321
 SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
 GEMINI_API_KEY=                 # vacío => stub
-GEMINI_CHAT_MODEL=gemini-2.5-flash
+GEMINI_CHAT_MODEL=gemini-3.5-flash-lite
 GEMINI_EMBEDDING_MODEL=gemini-embedding-001
 GEMINI_EMBEDDING_DIM=1536
 FRONTEND_ORIGIN=http://localhost:5173

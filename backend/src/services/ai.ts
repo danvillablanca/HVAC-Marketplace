@@ -1,5 +1,7 @@
 import type { ChatInput } from "@hvac/shared";
 import { env, hasGemini } from "../lib/env";
+import { HttpError } from "../lib/http";
+import { getServiceClient } from "../lib/supabase";
 
 export interface AiAnswer {
   answer: string;
@@ -227,12 +229,15 @@ const SYSTEM_PROMPT =
   "Usa precios en CLP cuando corresponda. Incluye recomendaciones de seguridad cuando aplique. " +
   "Mantén respuestas concisas pero completas (máximo 300 palabras).";
 
+const GEMINI_TIMEOUT_MS = 10_000;
+
 async function askGemini(message: string): Promise<AiAnswer> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${env.geminiChatModel}:generateContent?key=${env.geminiApiKey}`;
 
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
     body: JSON.stringify({
       system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
       contents: [{ parts: [{ text: message }] }],
@@ -250,7 +255,13 @@ async function askGemini(message: string): Promise<AiAnswer> {
   }
 
   const data = await res.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  // Los modelos con razonamiento pueden devolver partes "thought": se omiten.
+  const parts: { text?: string; thought?: boolean }[] = data?.candidates?.[0]?.content?.parts ?? [];
+  const text = parts
+    .filter((part) => !part.thought && part.text)
+    .map((part) => part.text)
+    .join("")
+    .trim();
   if (!text) return matchRules(message);
 
   return {
@@ -262,7 +273,37 @@ async function askGemini(message: string): Promise<AiAnswer> {
 
 // ---- Public API ----
 
-export async function answerQuestion(input: ChatInput, _userId: string): Promise<AiAnswer> {
+/** IA-04: consultas al asistente por usuario y día. */
+export const AI_DAILY_LIMIT = 20;
+export const AI_LIMIT_MESSAGE =
+  "Alcanzaste el límite diario de consultas al asistente (20). Vuelve a intentarlo mañana o crea una solicitud de servicio.";
+
+// Respaldo en memoria cuando no hay service role (tests y modo demo).
+const memoryUsage = new Map<string, number>();
+
+async function consumeQuota(userId: string): Promise<void> {
+  const db = getServiceClient();
+  if (!db) {
+    const key = `${userId}:${new Date().toISOString().slice(0, 10)}`;
+    const used = memoryUsage.get(key) ?? 0;
+    if (used >= AI_DAILY_LIMIT) throw new HttpError("rate_limited", AI_LIMIT_MESSAGE, 429);
+    memoryUsage.set(key, used + 1);
+    return;
+  }
+  const { data, error } = await db.rpc("consume_ai_quota", {
+    p_user_id: userId,
+    p_limit: AI_DAILY_LIMIT,
+  });
+  if (error) {
+    // Si el contador falla no se bloquea al usuario; queda en el log.
+    console.error("[ai] no se pudo registrar el uso:", error.message);
+    return;
+  }
+  if (data === null) throw new HttpError("rate_limited", AI_LIMIT_MESSAGE, 429);
+}
+
+export async function answerQuestion(input: ChatInput, userId: string): Promise<AiAnswer> {
+  await consumeQuota(userId);
   if (hasGemini) {
     try {
       return await askGemini(input.message);

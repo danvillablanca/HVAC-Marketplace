@@ -45,10 +45,10 @@
 | REQ-VAL-01 | Reseña 1–5 solo si Completada | A | Parcial | `reviews` en DB; sin restricción por estado | PR-032 | No ejecutada | — |
 | REQ-VAL-02 | Promedio y conteo automáticos | A | Implementado | Trigger `increment_provider_reviews` | PR-033 | No ejecutada | — |
 | REQ-VAL-03 | Respuesta del proveedor | B | Pendiente | — | PR-034 | No ejecutada | — |
-| REQ-IA-01 | Diagnóstico asistido con IA | A | Parcial | Chat con Gemini y fallback por reglas en `services/ai.ts`; sin diagnóstico estructurado ni prellenado | PR-035 | OK chat por reglas y caída a reglas sin Gemini (unit `PR-035` en `ai.test.ts`) | 15/11/2026 |
+| REQ-IA-01 | Diagnóstico asistido con IA | A | Parcial | Chat con Gemini (`gemini-3.5-flash-lite`, timeout 10 s) y respaldo por reglas en `services/ai.ts`; en producción con `GEMINI_API_KEY` desde el 24/11/2026. Sin diagnóstico estructurado ni prellenado | PR-035 | OK reglas, Gemini con mocks y caída a reglas ante error o timeout (`ai.test.ts`); E2E `chat.spec.ts` | 24/11/2026 |
 | REQ-IA-02 | Búsqueda semántica | M | Diferido | `match_documents` RPC existe; sin endpoint. Se difiere con el resto del módulo IA/RAG (ADR-0006) y va a la Solicitud de Cambio | PR-036 | Diferido (sin prueba) | 15/11/2026 |
 | REQ-IA-03 | Asistente RAG | M | Pendiente | Stub | PR-037 | No ejecutada | — |
-| REQ-IA-04 | Rate limit IA y contingencia | A | Pendiente | — | PR-038 | No ejecutada | — |
+| REQ-IA-04 | Rate limit IA y contingencia | A | Implementado | Migración `0015_ai_usage` (`consume_ai_quota`, solo service role): 20 consultas/día por usuario → 429 con mensaje; timeout de 10 s y respuesta por reglas si Gemini falla; el chat exige sesión y lo indica en `/chat` | PR-038 | OK (`ai.test.ts`, `chat-stub.test.tsx`, pgTAP `ai_usage_test.sql`) | 24/11/2026 |
 | REQ-ADM-01 | Listar/suspender usuarios | M | Pendiente | — | PR-039 | No ejecutada | — |
 | REQ-ADM-02 | Moderar reseñas | M | Pendiente | — | PR-040 | No ejecutada | — |
 | REQ-ADM-03 | Panel de métricas | M | Parcial | Adelantado por solicitud de cambio: métricas comerciales del proveedor (`/api/providers/me/metrics`, RPC `provider_metrics`, migración 0014) y tarjeta de motivos de cancelación del admin (`/api/admin/metrics/cancellations`). Falta el panel global del admin (usuarios, solicitudes, proveedores) | PR-041 | OK (unit + E2E demo + pgTAP `provider_metrics_test.sql` ejecutado en Supabase local) | 15/11/2026 |
