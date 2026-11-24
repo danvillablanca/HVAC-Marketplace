@@ -231,44 +231,54 @@ const SYSTEM_PROMPT =
 
 const GEMINI_TIMEOUT_MS = 10_000;
 
-async function askGemini(message: string): Promise<AiAnswer> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${env.geminiChatModel}:generateContent?key=${env.geminiApiKey}`;
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-      contents: [{ parts: [{ text: message }] }],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 1024,
-      },
-    }),
-  });
-
-  if (!res.ok) {
-    console.error("[ai] Gemini error:", res.status, await res.text().catch(() => ""));
-    // Fall back to rules
-    return matchRules(message);
+/** Pide una respuesta a un modelo; devuelve null si el modelo falla o no responde texto. */
+async function askGeminiModel(model: string, message: string): Promise<string | null> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.geminiApiKey}`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: [{ parts: [{ text: message }] }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1024,
+        },
+      }),
+    });
+    if (!res.ok) {
+      console.error(`[ai] Gemini ${model} error:`, res.status, await res.text().catch(() => ""));
+      return null;
+    }
+    const data = await res.json();
+    // Los modelos con razonamiento pueden devolver partes "thought": se omiten.
+    const parts: { text?: string; thought?: boolean }[] =
+      data?.candidates?.[0]?.content?.parts ?? [];
+    const text = parts
+      .filter((part) => !part.thought && part.text)
+      .map((part) => part.text)
+      .join("")
+      .trim();
+    return text || null;
+  } catch (error) {
+    console.error(`[ai] Gemini ${model} exception:`, (error as Error).message);
+    return null;
   }
+}
 
-  const data = await res.json();
-  // Los modelos con razonamiento pueden devolver partes "thought": se omiten.
-  const parts: { text?: string; thought?: boolean }[] = data?.candidates?.[0]?.content?.parts ?? [];
-  const text = parts
-    .filter((part) => !part.thought && part.text)
-    .map((part) => part.text)
-    .join("")
-    .trim();
-  if (!text) return matchRules(message);
-
-  return {
-    answer: text,
-    sources: ["gemini-ai"],
-    stub: false,
-  };
+/**
+ * Prueba el modelo principal y, si está saturado o falla (p. ej. 503 "high demand"),
+ * el de respaldo. Si ninguno responde, usa las reglas.
+ */
+async function askGemini(message: string): Promise<AiAnswer> {
+  const models = [...new Set([env.geminiChatModel, env.geminiFallbackModel].filter(Boolean))];
+  for (const model of models) {
+    const text = await askGeminiModel(model, message);
+    if (text) return { answer: text, sources: ["gemini-ai"], stub: false };
+  }
+  return matchRules(message);
 }
 
 // ---- Public API ----
