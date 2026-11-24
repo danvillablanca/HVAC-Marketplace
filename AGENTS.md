@@ -42,8 +42,8 @@ pnpm test:e2e                 # Playwright en modo demo (lo mismo que CI)
 
 - **Modo demo** (`DEMO_MODE=true`, `VITE_DEMO_MODE=true`, sin claves de Supabase): todo en memoria, se borra al reiniciar el backend. Las claves de ejemplo `your-...` de `.env.example` cuentan como vacías.
 - **Modo real**: copiar en `.env` las claves de `npx supabase status` y poner ambos `DEMO_MODE=false` (ver `docs/guias/demo.md`).
-- **Supabase oficial (nube)**: proyecto `paklzafoipzghfyftnfw` (región us-east-1); pasos en [`docs/guias/supabase-oficial.md`](docs/guias/supabase-oficial.md). Al 09/11/2026 tiene las **migraciones 0001–0012 aplicadas**, el seed original (12 servicios, 10 proveedores, 6 reseñas; comunas con tildes corregidas) y **sin cuentas de usuario**. La conexión directa `db.<ref>.supabase.co` es solo IPv6: usar el *Session pooler* (`aws-0-us-east-1.pooler.supabase.com`, usuario `postgres.<ref>`) en `SUPABASE_DB_URL` y `npx supabase db push --db-url "$SUPABASE_DB_URL"`. No correr el seed completo: chocaría con los datos existentes. "Confirm email" está activo y el correo gratuito de Supabase solo llega a miembros del equipo: para probar con cualquier correo, desactivarlo o configurar SMTP propio. Falta crear una cuenta admin (no se auto-registra, RN-01).
-- Cuentas demo (contraseña `demo1234`): `cliente@demo.cl`, `cliente2@demo.cl`, `proveedor@demo.cl`, `proveedor2@demo.cl`, `admin@demo.cl`.
+- **Producción (24/11/2026)**: frontend <https://hvac-connect.vercel.app>, backend <https://hvac-connect-api.vercel.app> (`/api/health` → `supabase: true`), ambos en el equipo Vercel de `hvacmarkett` y desplegados con la CLI (`vercel deploy --prod` desde la raíz; el proyecto Vercel no está conectado a GitHub). Supabase `paklzafoipzghfyftnfw` (us-east-1) con **migraciones 0001–0014**, Auth con SMTP de Gmail (`hvacmarkett@gmail.com`), **Confirm email activo**, Site URL y redirects `/ingresar` y `/restablecer` del dominio real. Pasos y variables en [`docs/guias/despliegue.md`](docs/guias/despliegue.md). La conexión directa `db.<ref>.supabase.co` es solo IPv6: usar el *Session pooler* (`aws-0-us-east-1.pooler.supabase.com`, usuario `postgres.<ref>`). No correr el seed en la nube.
+- Cuentas demo **solo en local** (contraseña `demo1234`): `cliente@demo.cl`, `cliente2@demo.cl`, `proveedor@demo.cl`, `proveedor2@demo.cl`, `admin@demo.cl`. En la nube esas cuentas tienen contraseña aleatoria (el seed es público) y el admin es `hvacmarkett@gmail.com`.
 - Recorridos contra Supabase real: [`tests/real/`](tests/real/README.md).
 - CI (`.github/workflows/ci.yml`): job `verify` (typecheck, lint, build, unit, E2E) y job `database` (Supabase + pgTAP).
 
@@ -122,7 +122,7 @@ Verificación hecha en cada bloque: unit (vitest), pgTAP, E2E demo y un recorrid
 ### Otros pendientes
 - Probar Google OAuth con credenciales reales (pasos en `docs/guias/despliegue.md`).
 - Vista previa del radio de cobertura sobre el mapa en el perfil del proveedor (hoy es texto).
-- Despliegue (Vercel + Supabase Cloud) y actualizar la matriz de trazabilidad.
+- Conectar los proyectos Vercel a GitHub (requiere al dueño del repo) para despliegue automático al mergear a `main`.
 - Sprint 3: VAL-01 (reseña solo con solicitud completada y confirmada; ya existe el enlace "Deja tu reseña"), VAL-03, IA-03, ADM-01..04.
 
 ## 6. Forma de trabajo acordada

@@ -171,7 +171,7 @@ Guía paso a paso de todos los flujos que puedes verificar en **HVAC Connect** c
 | 4 | En una solicitud con cotizaciones, sección "Mensajes" | El cliente ve una pestaña por proveedor que cotizó (con no leídos); el proveedor ve solo su conversación. |
 | 5 | Escribir y "Enviar" (Enter envía, Shift+Enter salta línea) | El mensaje aparece en la otra pantalla en menos de 2 s y genera la notificación "Nuevo mensaje de …". Al abrirlo se marca "Leído". |
 
-> Correos: cotización recibida, cotización aceptada y resultado de verificación se envían con Resend si hay `RESEND_API_KEY`; si no, quedan en el log del backend (`[email] ...`). Los correos de cuenta (recuperación, confirmación) salen en español; en local se ven en Mailpit (`http://127.0.0.1:54324`).
+> Correos: cotización recibida, cotización aceptada y resultado de verificación se envían por SMTP (Gmail en producción) o con Resend si hay `RESEND_API_KEY`; si no, quedan en el log del backend (`[email] ...`). Los correos de cuenta (recuperación, confirmación) salen en español; en local se ven en Mailpit (`http://127.0.0.1:54324`).
 
 ---- | ------ | ------------------ |
 | 1 | Observar el ícono de campana en el header | Muestra badge con cantidad de no leídas (o nada si son 0). |
