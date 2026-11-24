@@ -2,7 +2,7 @@ import { LegalLayout } from "./LegalLayout";
 
 export default function PrivacyPage() {
   return (
-    <LegalLayout title="Política de privacidad" updatedAt="02-11-2026">
+    <LegalLayout title="Política de privacidad" updatedAt="24-11-2026">
       <p>
         En HVAC Connect tratamos tus datos personales conforme a la Ley N° 19.628 sobre Protección
         de la Vida Privada y sus modificaciones. Esta política explica qué datos recopilamos, para
@@ -34,6 +34,11 @@ export default function PrivacyPage() {
         tu solicitud. Tus datos de contacto se comparten con un proveedor únicamente cuando aceptas
         su cotización. No vendemos tus datos. Usamos proveedores de infraestructura (alojamiento,
         base de datos y correo) que los tratan por cuenta nuestra.
+      </p>
+      <p>
+        Las consultas que escribes en el Asistente IA se envían a Google Gemini para generar la
+        respuesta. Google puede usarlas para mejorar sus servicios, por lo que no debes incluir
+        datos personales ni de contacto en esas consultas.
       </p>
 
       <h2>4. Tus derechos</h2>

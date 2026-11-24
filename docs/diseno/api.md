@@ -469,7 +469,7 @@ export async function POST(req: Request) {
 | Fragmentación | Dividir en `document_chunks` (~500–800 tokens, solape ~15%).                                   | `chunk_index` determinista                    |
 | Embeddings    | Generar con Gemini `gemini-embedding-001` (1536 dims) y persistir en `embedding`.              | `GEMINI_API_KEY`, `GEMINI_EMBEDDING_DIM=1536` |
 | Retrieval     | Embedding de la consulta → RPC `match_documents(query_embedding, match_count)` (coseno `<=>`). | Índice HNSW                                   |
-| Generación    | Prompt con contexto recuperado → Gemini `gemini-2.5-flash`.                                    | `GEMINI_CHAT_MODEL`                           |
+| Generación    | Prompt con contexto recuperado → Gemini `gemini-3.5-flash-lite`.                                    | `GEMINI_CHAT_MODEL`                           |
 | Respuesta     | Devolver `reply` + `sources[]` (título/URL del documento y score).                             | Contrato sin cambios                          |
 | Guardrails    | Limitar a contexto HVAC; si no hay fuentes, responder con fallback.                            | —                                             |
 | Costos        | Rate limiting (429) y caché de embeddings de consultas frecuentes.                             | §7                                            |

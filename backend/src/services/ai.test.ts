@@ -66,3 +66,62 @@ describe("PR-035 answerQuestion con GEMINI_API_KEY configurada (IA-01, fallback)
     expect(result.answer).toBeTruthy();
   });
 });
+
+describe("PR-035 answerQuestion con Gemini (IA-01)", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("devuelve la respuesta de Gemini, sin partes de razonamiento, con el modelo configurado", async () => {
+    vi.stubEnv("GEMINI_API_KEY", "test-key");
+    vi.stubEnv("GEMINI_CHAT_MODEL", "gemini-3.5-flash-lite");
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            content: {
+              parts: [
+                { text: "pensando...", thought: true },
+                { text: "Necesitas un servicio de instalación de split." },
+              ],
+            },
+          },
+        ],
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const mod = await import("./ai");
+    const result = await mod.answerQuestion({ message: "instalar split" }, "gemini-user");
+    expect(result).toEqual({
+      answer: "Necesitas un servicio de instalación de split.",
+      sources: ["gemini-ai"],
+      stub: false,
+    });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(String(url)).toContain("models/gemini-3.5-flash-lite:generateContent");
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("si Gemini se demora o falla, responde con las reglas", async () => {
+    vi.stubEnv("GEMINI_API_KEY", "test-key");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new DOMException("timeout", "TimeoutError")));
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const mod = await import("./ai");
+    const result = await mod.answerQuestion({ message: "Mi equipo no enfría" }, "timeout-user");
+    expect(result.answer).toContain("filtro");
+  });
+});
+
+describe("PR-038 límite diario del asistente (IA-04)", () => {
+  it("permite 20 consultas al día por usuario y la 21 responde 429", async () => {
+    const mod = await import("./ai");
+    for (let i = 0; i < mod.AI_DAILY_LIMIT; i += 1) {
+      await mod.answerQuestion({ message: "hola" }, "limit-user");
+    }
+    await expect(mod.answerQuestion({ message: "hola" }, "limit-user")).rejects.toMatchObject({
+      status: 429,
+      code: "rate_limited",
+    });
+    // Otro usuario no se ve afectado.
+    await expect(mod.answerQuestion({ message: "hola" }, "otro-user")).resolves.toBeTruthy();
+  });
+});

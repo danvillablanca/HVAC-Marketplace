@@ -42,7 +42,7 @@ pnpm test:e2e                 # Playwright en modo demo (lo mismo que CI)
 
 - **Modo demo** (`DEMO_MODE=true`, `VITE_DEMO_MODE=true`, sin claves de Supabase): todo en memoria, se borra al reiniciar el backend. Las claves de ejemplo `your-...` de `.env.example` cuentan como vacías.
 - **Modo real**: copiar en `.env` las claves de `npx supabase status` y poner ambos `DEMO_MODE=false` (ver `docs/guias/demo.md`).
-- **Producción (24/11/2026)**: frontend <https://hvac-connect.vercel.app>, backend <https://hvac-connect-api.vercel.app> (`/api/health` → `supabase: true`), ambos en el equipo Vercel de `hvacmarkett` y desplegados con la CLI (`vercel deploy --prod` desde la raíz; el proyecto Vercel no está conectado a GitHub). Supabase `paklzafoipzghfyftnfw` (us-east-1) con **migraciones 0001–0014**, Auth con SMTP de Gmail (`hvacmarkett@gmail.com`), **Confirm email activo**, Site URL y redirects `/ingresar` y `/restablecer` del dominio real. Pasos y variables en [`docs/guias/despliegue.md`](docs/guias/despliegue.md). La conexión directa `db.<ref>.supabase.co` es solo IPv6: usar el *Session pooler* (`aws-0-us-east-1.pooler.supabase.com`, usuario `postgres.<ref>`). No correr el seed en la nube.
+- **Producción (24/11/2026)**: frontend <https://hvac-connect.vercel.app>, backend <https://hvac-connect-api.vercel.app> (`/api/health` → `supabase: true`), ambos en el equipo Vercel de `hvacmarkett` y desplegados con la CLI (`vercel deploy --prod` desde la raíz; el proyecto Vercel no está conectado a GitHub). Supabase `paklzafoipzghfyftnfw` (us-east-1) con **migraciones 0001–0015**, Auth con SMTP de Gmail (`hvacmarkett@gmail.com`), **Confirm email activo**, Site URL y redirects `/ingresar` y `/restablecer` del dominio real. Pasos y variables en [`docs/guias/despliegue.md`](docs/guias/despliegue.md). La conexión directa `db.<ref>.supabase.co` es solo IPv6: usar el *Session pooler* (`aws-0-us-east-1.pooler.supabase.com`, usuario `postgres.<ref>`). No correr el seed en la nube.
 - Cuentas demo **solo en local** (contraseña `demo1234`): `cliente@demo.cl`, `cliente2@demo.cl`, `proveedor@demo.cl`, `proveedor2@demo.cl`, `admin@demo.cl`. En la nube esas cuentas tienen contraseña aleatoria (el seed es público) y el admin es `hvacmarkett@gmail.com`.
 - Recorridos contra Supabase real: [`tests/real/`](tests/real/README.md).
 - CI (`.github/workflows/ci.yml`): job `verify` (typecheck, lint, build, unit, E2E) y job `database` (Supabase + pgTAP).
@@ -60,7 +60,7 @@ Todo lo de abajo está integrado en `develop`. Detalle por requerimiento en `E3-
 | D — Búsqueda (BUS) | ✅ | Comuna o geolocalización, radio 10 km, filtros, orden y paginación en servidor, mapa OSM. |
 | E — Solicitudes y cotizaciones (SOL, COT) | ✅ (fotos diferidas) | Elegibilidad RN-03, bandeja limitada, comparación, aceptación, ejecución, confirmación, cancelación. |
 | F — Mensajería y notificaciones (MSG, NOT) | ✅ (MSG-02 diferido) | Chat por hilo con Realtime, campana en vivo, correos (Resend) y plantillas de Auth en español. |
-| **G — IA (IA-01, 02, 04)** | ⏳ **Pendiente** | Ver §5. |
+| G — IA (IA-01, 02, 04) | ⏳ Parcial | Chat con Gemini en producción y límite IA-04 (0015, 20/día). Faltan IA-01 estructurado e IA-02. Ver §5. |
 | **H — Pruebas Sprint 1 y 2** | ⏳ **Pendiente** | Ver §5. |
 | Sprint 3 (VAL, IA-03, ADM) | ⏳ Pendiente | Fuera del alcance de la E3 actual. |
 
@@ -109,7 +109,7 @@ Verificación hecha en cada bloque: unit (vitest), pgTAP, E2E demo y un recorrid
 
 ### Bloque G — IA (prioridad alta: IA-01 e IA-04)
 - **IA-01**: `POST /api/ai/diagnose` (solo clientes): Gemini en el servidor con `responseMimeType: application/json` + schema; validar con zod (`serviceType` del catálogo, `urgency`, `possibleCauses[]`, `recommendations[]`, `disclaimer`). Botón "Ayúdame a describir el problema" que prellene `request-form.tsx`. Advertencia RN-09 siempre visible. Hoy solo existe el chat con reglas/Gemini en `backend/src/services/ai.ts`.
-- **IA-04**: tabla `ai_usage` (20 consultas/día por usuario → 429 con mensaje claro), timeout de 10 s con `AbortController`, mensaje de contingencia y flujo manual disponible. **Sin `GEMINI_API_KEY` responder con la contingencia, no con texto inventado**; tests con mocks.
+- ~~IA-04~~ hecho (24/11/2026): `ai_usage` + `consume_ai_quota` (0015), 429 con mensaje, timeout 10 s, reglas como contingencia; `/chat` exige sesión.
 - **IA-02**: columna `embedding vector(1536)` en `providers` (`gemini-embedding-001`, `outputDimensionality = GEMINI_EMBEDDING_DIM`), script `scripts/embed-providers.ts`, recálculo al editar el perfil, RPC `match_providers(query_embedding, lat, lng, radius)` con filtro geográfico y solo verificados; búsqueda en texto libre en la UI.
 - Actualizar ADR-0006 con el nuevo alcance.
 
@@ -130,7 +130,7 @@ Verificación hecha en cada bloque: unit (vitest), pgTAP, E2E demo y un recorrid
 - Un bloque por rama `feature/<bloque>`; cada bloque cierra con: tests (unit + pgTAP + E2E demo), recorrido contra Supabase real, actualización de `E3-estado-implementacion.md` (REQ y defectos), `E3-bitacora.md` y `flujos-funcionales.md`, y **CI verde**.
 - Commits convencionales en español (`feat(api): ...`, `fix(ui): ...`, `docs: ...`, `test(db): ...`).
 - **No hacer push sin que lint, typecheck, test y build pasen** (revisar los códigos de salida, no solo la salida filtrada).
-- Migraciones nuevas: siguiente número disponible (la última es `0014_provider_metrics.sql`); nunca editar una migración ya integrada en `develop`.
+- Migraciones nuevas: siguiente número disponible (la última es `0015_ai_usage.sql`); nunca editar una migración ya integrada en `develop`.
 
 ## 7. Problemas conocidos del entorno
 - **Windows + CRLF**: `core.autocrlf=true`; Prettier usa `endOfLine: auto`. No cambiarlo.
