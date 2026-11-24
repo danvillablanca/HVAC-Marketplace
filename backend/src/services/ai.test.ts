@@ -101,6 +101,28 @@ describe("PR-035 answerQuestion con Gemini (IA-01)", () => {
     expect(init.signal).toBeInstanceOf(AbortSignal);
   });
 
+  it("si el modelo principal está saturado (503) usa el modelo de respaldo", async () => {
+    vi.stubEnv("GEMINI_API_KEY", "test-key");
+    vi.stubEnv("GEMINI_CHAT_MODEL", "modelo-principal");
+    vi.stubEnv("GEMINI_FALLBACK_MODEL", "modelo-respaldo");
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 503, text: async () => "high demand" })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          candidates: [{ content: { parts: [{ text: "Respuesta de respaldo" }] } }],
+        }),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+    const mod = await import("./ai");
+    const result = await mod.answerQuestion({ message: "emergencia" }, "fallback-user");
+    expect(result.answer).toBe("Respuesta de respaldo");
+    expect(String(fetchMock.mock.calls[0][0])).toContain("models/modelo-principal:");
+    expect(String(fetchMock.mock.calls[1][0])).toContain("models/modelo-respaldo:");
+  });
+
   it("si Gemini se demora o falla, responde con las reglas", async () => {
     vi.stubEnv("GEMINI_API_KEY", "test-key");
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new DOMException("timeout", "TimeoutError")));

@@ -127,6 +127,7 @@ elección se guarda una sola vez con la RPC `choose_role` y nunca permite el rol
 | `BACKEND_PORT`              | `3001` (referencial; en Vercel el puerto lo gestiona la plataforma).          |
 | `GEMINI_API_KEY`            | Clave de Google AI Studio (_Sensitive_). Vacía: el asistente responde por reglas. |
 | `GEMINI_CHAT_MODEL`         | `gemini-3.5-flash-lite` (`gemini-2.5-flash` ya no existe para cuentas nuevas). |
+| `GEMINI_FALLBACK_MODEL`     | `gemini-3.5-flash`: se usa si el principal está saturado (503) o falla; luego reglas. |
 | `DEMO_MODE`                 | `false` (o vacío).                                                            |
 | `SMTP_HOST` / `SMTP_PORT`   | `smtp.gmail.com` / `465` (sección 1.5).                                       |
 | `SMTP_USER` / `SMTP_PASS`   | Cuenta Gmail y contraseña de aplicación (`SMTP_PASS` como _Sensitive_).       |
