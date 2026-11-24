@@ -6,7 +6,11 @@ export const env = {
   supabaseAnonKey: real(process.env.SUPABASE_ANON_KEY),
   supabaseServiceRoleKey: real(process.env.SUPABASE_SERVICE_ROLE_KEY),
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
-  /** NOT-02: correos transaccionales con Resend (opcional). */
+  /** NOT-02: correos transaccionales por SMTP (p. ej. Gmail) o Resend (opcionales). */
+  smtpHost: process.env.SMTP_HOST ?? "",
+  smtpPort: Number(process.env.SMTP_PORT ?? 465),
+  smtpUser: process.env.SMTP_USER ?? "",
+  smtpPass: real(process.env.SMTP_PASS),
   resendApiKey: real(process.env.RESEND_API_KEY),
   emailFrom: process.env.EMAIL_FROM ?? "HVAC Connect <onboarding@resend.dev>",
   geminiChatModel: process.env.GEMINI_CHAT_MODEL ?? "gemini-2.5-flash",

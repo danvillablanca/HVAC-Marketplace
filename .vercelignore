@@ -1,0 +1,8 @@
+# No subir secretos locales al desplegar con la CLI
+.env
+.env.*
+!.env.example
+node_modules
+**/node_modules
+**/.next
+**/dist

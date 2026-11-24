@@ -1,4 +1,17 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const sendMail = vi.fn();
+const createTransport = vi.fn(() => ({ sendMail }));
+vi.mock("nodemailer", () => ({ default: { createTransport } }));
+
+beforeEach(() => {
+  // Los casos de Resend no deben tomar un SMTP del entorno local.
+  vi.stubEnv("SMTP_HOST", "");
+  vi.stubEnv("SMTP_USER", "");
+  vi.stubEnv("SMTP_PASS", "");
+  sendMail.mockReset();
+  createTransport.mockClear();
+});
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -51,5 +64,42 @@ describe("PR-031 NOT-02 correos transaccionales", () => {
   it("escapa HTML del contenido", async () => {
     const { renderEmail } = await import("./email");
     expect(renderEmail({ ...message, text: "<script>x</script>" })).not.toContain("<script>");
+  });
+
+  it("con SMTP envía por nodemailer (Gmail, TLS 465) y tiene prioridad sobre Resend", async () => {
+    vi.stubEnv("SMTP_HOST", "smtp.gmail.com");
+    vi.stubEnv("SMTP_USER", "hvac@gmail.com");
+    vi.stubEnv("SMTP_PASS", "clave-app");
+    vi.stubEnv("RESEND_API_KEY", "re_test_123");
+    vi.stubEnv("EMAIL_FROM", "HVAC Connect <hvac@gmail.com>");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    sendMail.mockResolvedValue({ messageId: "1" });
+    const { sendEmail } = await import("./email");
+    await expect(sendEmail(message)).resolves.toBe("sent");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(createTransport).toHaveBeenCalledWith(
+      expect.objectContaining({
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: { user: "hvac@gmail.com", pass: "clave-app" },
+      }),
+    );
+    const mail = sendMail.mock.calls[0][0];
+    expect(mail.from).toBe("HVAC Connect <hvac@gmail.com>");
+    expect(mail.to).toBe("cliente@demo.cl");
+    expect(mail.subject).toBe("Nueva cotización recibida");
+    expect(mail.html).toContain("/panel/solicitudes/abc");
+  });
+
+  it("si SMTP falla no lanza error", async () => {
+    vi.stubEnv("SMTP_HOST", "smtp.gmail.com");
+    vi.stubEnv("SMTP_USER", "hvac@gmail.com");
+    vi.stubEnv("SMTP_PASS", "clave-app");
+    sendMail.mockRejectedValue(new Error("Invalid login"));
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { sendEmail } = await import("./email");
+    await expect(sendEmail(message)).resolves.toBe("failed");
   });
 });
